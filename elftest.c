@@ -5,9 +5,12 @@
 #include <assert.h>
 
 #include <libelf.h>
+#include <gelf.h>
 
 #include "ropelf.h"
 #include "util.h"
+
+#define VERBOSE 1
 
 #define EXIT_FAILED 3 // exit status
 
@@ -41,13 +44,23 @@ int main(int argc, char *argv[]) {
     goto cleanup;
   }
 
-  Elf64_Phdr phdrs[PHDRS_MAXSIZE];
-  if (ropelf_getexecphdrs(elf, phdrs, PHDRS_MAXSIZE);
+  rop_banks_t banks;
+  if (banks_create(fd, elf, &banks) < 0) {
+    perror("banks_create");
+    goto cleanup;
+  }
 
+  if (VERBOSE) {
+    fprintf(stderr, "successfully created %zu banks.\n", banks.len);
+  }
+
+  /* dump exec hex */
+  bank_hexdump(&banks.arr[0], stdout);
+  
   /* success */
-  printf("success!\n");
+  fprintf(stderr, "success!\n");
   exitno = 0;
-
+  
   /* cleanup */
  cleanup:
   ropelf_end(elf);
