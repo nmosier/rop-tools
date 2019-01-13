@@ -19,6 +19,7 @@ typedef struct {
 Elf *ropelf_begin(int fd);
 void ropelf_end(Elf *elf);
 
+void banks_init(rop_banks_t *banks);
 int bank_create(int fd, Elf64_Phdr *phdr, rop_bank_t *bank);
 void bank_delete(rop_bank_t *bank);
 

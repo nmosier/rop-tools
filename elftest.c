@@ -8,6 +8,7 @@
 #include <gelf.h>
 
 #include "ropelf.h"
+#include "trie.h"
 #include "util.h"
 
 #define VERBOSE 1
@@ -22,10 +23,14 @@ int main(int argc, char *argv[]) {
   const char *path;
 
   Elf *elf;
+  rop_banks_t banks;
+  trie_t trie;
 
   /* initialization */
   fd = -1;
   exitno = EXIT_FAILED;
+  banks_init(&banks);
+  trie = TRIE_ERROR;
   
   if (argc != 2) {
     fprintf(stderr, "usage: %s elf_file\n", argv[0]);
@@ -44,7 +49,6 @@ int main(int argc, char *argv[]) {
     goto cleanup;
   }
 
-  rop_banks_t banks;
   if (banks_create(fd, elf, &banks) < 0) {
     perror("banks_create");
     goto cleanup;
@@ -55,7 +59,20 @@ int main(int argc, char *argv[]) {
   }
 
   /* dump exec hex */
-  bank_hexdump(&banks.arr[0], stdout);
+  //bank_hexdump(&banks.arr[0], stdout);
+
+  /* test trie */
+  if ((trie = trie_init()) == TRIE_ERROR) {
+    perror("trie_init");
+    goto cleanup;
+  }
+  for (size_t i = 1; i < 200; ++i) {
+    uint8_t *instr = banks.arr[0].b_start;
+    if (trie_addinstr(instr, i, 0, trie) < 0) {
+      perror("trie_addinstr");
+      goto cleanup;
+    }
+  }
   
   /* success */
   fprintf(stderr, "success!\n");
@@ -70,6 +87,8 @@ int main(int argc, char *argv[]) {
       exitno = EXIT_FAILED;
     }
   }
+  trie_delete(trie);
+  banks_delete(&banks);
 
   exit(exitno);
 }

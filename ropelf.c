@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 #include <libelf.h>
 #include <gelf.h>
@@ -77,6 +78,9 @@ void bank_delete(rop_bank_t *bank) {
   free(bank->b_start);
 }
 
+void banks_init(rop_banks_t *banks) {
+  memset(banks, 0, sizeof(*banks));
+}
 
 int banks_create(int fd, Elf *elf, rop_banks_t *banks) {
   size_t nphdrs;
