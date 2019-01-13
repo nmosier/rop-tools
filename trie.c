@@ -11,6 +11,7 @@
 
 #include "vec.h"
 #include "trie.h"
+#include "util.h"
 
 //static uint8_t trie_baseval = 0xc3;
 trie_t trie_init() {
@@ -86,12 +87,16 @@ int trie_addinstr(uint8_t *instr, size_t len, Elf64_Off off, trie_t trie) {
 int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
 			       trie_node_t *curnode) {
   size_t curlen;
+  size_t newlen;
+  uint8_t *newinstr;
+
+  curlen = curnode->tn_val.tv_len;
+  newlen = len - curlen;
+  newinstr = instr + curlen;
 
   /* check if instruction already matches current node */
-  curlen = curnode->tn_val.tv_len;
-  assert (len >= curlen);
+  assert (len >= curlen && memcmp(instr, curnode->tn_val.tv_buf, curlen) == 0);
   if (len == curlen) {
-    assert (memcmp(instr, curnode->tn_val.tv_buf, len) == 0);
     return 0;
   }
   
@@ -102,10 +107,11 @@ int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
   /* strategy: match prefix of instruction bytes with child's */
   for (i = 0; i < nchildren; ++i) {
     trie_node_t *child;
+    size_t childlen;
     
     child = curnode->tn_children.arr[i];
-    if (memcmp(instr, child->tn_val.tv_buf,
-	       child->tn_val.tv_len) == 0) {
+    childlen = child->tn_val.tv_len;
+    if (memcmp(newinstr, child->tn_val.tv_buf, MIN(childlen, newlen)) == 0) {
       /* found match */
       break;
     }
@@ -113,14 +119,15 @@ int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
   
   if (i == nchildren) {
     /* child match not found; add new child */
-    if (trie_addnodeat(instr, len, off, curnode) == NULL) {
+    if (trie_addnodeat(newinstr, newlen, off, curnode) == NULL) {
       return -1;
     }
     return 0;
   }
 
   /* child match found -- recursive call */
-  return trie_addinstr_aux(instr, len, off, curnode->tn_children.arr[i]);
+     
+  return trie_addinstr_aux(newinstr, newlen, off, curnode->tn_children.arr[i]);
 }
 
 // returns in for compliance with VECTOR_DELETE
@@ -135,7 +142,6 @@ int trie_delete_aux(trie_node_t **nodep) {
   if (node != TRIE_ERROR) {
     VECTOR_DELETE(&node->tn_children, trie_delete_aux);
     free(node->tn_val.tv_buf);
-    fprintf(stderr, "freeing node at %p\n", (const void *) node);
     free(node);
   }
 

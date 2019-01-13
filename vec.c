@@ -139,7 +139,6 @@ int vector_delete(void *vec, void **arr, size_t *cnt, size_t vsize, size_t esize
      }
    }
 
-   fprintf(stderr, "freeing array at %p\n", (const void *) *arr);
    free(*arr);
    memset(vec, 0, vsize);
 
