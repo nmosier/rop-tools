@@ -125,8 +125,7 @@ int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
     return 0;
   }
 
-  /* child match found -- recursive call */
-     
+  /* child match found -- recursive call */     
   return trie_addinstr_aux(newinstr, newlen, off, curnode->tn_children.arr[i]);
 }
 
@@ -146,4 +145,40 @@ int trie_delete_aux(trie_node_t **nodep) {
   }
 
   return -0;
+}
+
+int trie_print_aux(trie_node_t *node, FILE *f, const uint8_t *prefix,
+		   size_t prefix_len);
+int trie_print(trie_t trie, FILE *f) {
+  return trie_print_aux(trie, f, NULL, 0);
+}
+
+int trie_print_aux(trie_node_t *node, FILE *f, const uint8_t *prefix,
+		    size_t prefix_len) {
+  uint8_t *curinstr; // current instruction
+  size_t curinstr_len;
+
+  curinstr_len = prefix_len + node->tn_val.tv_len;
+  if ((curinstr = malloc(curinstr_len)) == NULL) {
+    return -1;
+  }
+  memcpy(curinstr, prefix, prefix_len);
+  memcpy(curinstr + prefix_len, node->tn_val.tv_buf, node->tn_val.tv_len);
+  
+  /* print self */
+  for (size_t i = 0; i < curinstr_len; ++i) {
+    fprintf(f, "0x%2.2hx ", curinstr[i]);
+  }
+  fprintf(f, "\n");
+
+  /* print children */
+  for (size_t i = 0; i < node->tn_children.cnt; ++i) {
+    if (trie_print_aux(node->tn_children.arr[i], f, curinstr, curinstr_len) < 0) {
+      free(curinstr);
+      return -1;
+    }
+  }
+
+  free(curinstr);
+  return 0;
 }

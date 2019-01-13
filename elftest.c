@@ -66,12 +66,18 @@ int main(int argc, char *argv[]) {
     perror("trie_init");
     goto cleanup;
   }
-  for (size_t i = 1; i < 200; ++i) {
+  for (size_t i = 1; i <= 5; ++i) {
     uint8_t *instr = banks.arr[0].b_start;
     if (trie_addinstr(instr, i, 0, trie) < 0) {
       perror("trie_addinstr");
       goto cleanup;
     }
+  }
+
+  /* print trie */
+  if (trie_print(trie, stdout) < 0) {
+    perror("trie_print");
+    goto cleanup;
   }
   
   /* success */

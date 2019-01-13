@@ -35,5 +35,6 @@ void trie_delete(trie_t trie);
 trie_t trie_addnodeat(uint8_t *instr, size_t len, Elf64_Off off,
 		      trie_node_t *par);
 int trie_addinstr(uint8_t *instr, size_t len, Elf64_Off off, trie_t trie);
+int trie_print(trie_t trie, FILE *f);
 
 #endif
