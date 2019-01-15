@@ -10,6 +10,7 @@
 #include "ropelf.h"
 #include "trie.h"
 #include "util.h"
+#include "ropasm.h"
 
 #define VERBOSE 1
 
@@ -25,12 +26,14 @@ int main(int argc, char *argv[]) {
   Elf *elf;
   rop_banks_t banks;
   trie_t trie;
+  LLVMDisasmContextRef dcr;
 
   /* initialization */
   fd = -1;
   exitno = EXIT_FAILED;
   banks_init(&banks);
   trie = TRIE_ERROR;
+  dcr = NULL;
   
   if (argc != 2) {
     fprintf(stderr, "usage: %s elf_file\n", argv[0]);
@@ -79,6 +82,12 @@ int main(int argc, char *argv[]) {
     perror("trie_print");
     goto cleanup;
   }
+
+  /* test disasm init */
+  if ((dcr = ropasm_init()) == NULL) {
+    goto cleanup;
+  }
+  
   
   /* success */
   fprintf(stderr, "success!\n");
@@ -95,6 +104,7 @@ int main(int argc, char *argv[]) {
   }
   trie_delete(trie);
   banks_delete(&banks);
+  ropasm_end(dcr);
 
   exit(exitno);
 }

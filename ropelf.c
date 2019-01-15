@@ -42,7 +42,9 @@ Elf *ropelf_begin(int fd) {
 
 
 void ropelf_end(Elf *elf) {
-  elf_end(elf);
+  if (elf) {
+    elf_end(elf);
+  }
 }
 
 
