@@ -79,18 +79,18 @@ int main(int argc, char *argv[]) {
   
   
   // test: 6 bytes for 1st instruction
-  instr_t instr;
-  instr_init(&instr);
-  instr.mc = malloc(6);
-  memcpy(instr.mc, banks.arr[0].b_start, 6);
-  instr.mclen = 6; // known
-  instr.mcoff = 0; // need to work on later?
-  if (instr_disasm(&instr, dcr) < 0) {
+  instr_t *instr = malloc(sizeof(*instr));
+  instr_init(instr);
+  instr->mc = malloc(6);
+  memcpy(instr->mc, banks.arr[0].b_start, 6);
+  instr->mclen = 6; // known
+  instr->mcoff = 0; // need to work on later?
+  if (instr_disasm(instr, dcr) < 0) {
     fprintf(stderr, "instr_disasm: not an instruction.\n");
   } else {
-    instr_print(&instr, stdout, INSTR_PRINT_HEX);
+    instr_print(instr, stdout, INSTR_PRINT_HEX);
     printf("\n");
-    instr_print(&instr, stdout, INSTR_PRINT_DISASM);
+    instr_print(instr, stdout, INSTR_PRINT_DISASM);
     printf("\n");
   }
 

@@ -32,7 +32,7 @@ typedef struct trie_nodes {
 } trie_nodes_t;
 
 typedef struct trie_node {
-  trie_val_t tn_val;
+  trie_val_t *tn_val;
   struct trie_node *tn_parent;
   struct trie_nodes tn_children;
 } trie_node_t;
@@ -46,7 +46,7 @@ void trie_delete(trie_t trie);
 //trie_t trie_addnodeat(uint8_t *instr, size_t len, Elf64_Off off,
 //		      trie_node_t *par);
 //int trie_addinstr(uint8_t *instr, size_t len, Elf64_Off off, trie_t trie);
-int trie_addval(trie_val_t *vals, size_t cnt, trie_t trie);
+int trie_addval(trie_val_t **vals, size_t cnt, trie_t trie);
 int trie_print(trie_t trie, FILE *f);
 
 #endif

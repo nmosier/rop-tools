@@ -77,7 +77,10 @@ int instr_disasm(instr_t *instr, LLVMDisasmContextRef dcr) {
 }
 
 void instr_delete(instr_t *instr) {
-  free(instr->mc);
+  if (instr) {
+    free(instr->mc);
+    free(instr);
+  }
 }
 
 int instr_eq(const instr_t *lhs, const instr_t *rhs) {
@@ -96,17 +99,19 @@ int instr_eq(const instr_t *lhs, const instr_t *rhs) {
 }
 
 int instr_print(const instr_t *instr, FILE *f, int mode) {
-  switch (mode) {
-  case INSTR_PRINT_HEX:
-    for (size_t i = 0; i < instr->mclen; ++i) {
-      fprintf(f, "%1.1hx ", instr->mc[i]);
+  if (instr) {
+    switch (mode) {
+    case INSTR_PRINT_HEX:
+      for (size_t i = 0; i < instr->mclen; ++i) {
+	fprintf(f, "%1.1hx ", instr->mc[i]);
+      }
+    break;
+    case INSTR_PRINT_DISASM:
+      fprintf(f, "%s", instr->disasm);
+      break;
+    default:
+      return -1;
     }
-    break;
-  case INSTR_PRINT_DISASM:
-    fprintf(f, "%s", instr->disasm);
-    break;
-  default:
-    return -1;
   }
   
   return 0;
