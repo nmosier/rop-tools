@@ -93,7 +93,10 @@ int main(int argc, char *argv[]) {
     instr_print(&instr, stdout, INSTR_PRINT_DISASM);
     printf("\n");
   }
-  instr_delete(&instr);
+
+  trie_addval(&instr, 1, trie);
+  
+  //instr_delete(&instr);
   
   /*
   for (size_t i = 1; i <= 5; ++i) {
@@ -107,13 +110,10 @@ int main(int argc, char *argv[]) {
     }*/
 
   /* print trie */
-  /*
   if (trie_print(trie, stdout) < 0) {
     perror("trie_print");
     goto cleanup;
   }
-  */
-
   
   
   /* success */
