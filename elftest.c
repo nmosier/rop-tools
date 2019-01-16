@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   memcpy(instr->mc, banks.arr[0].b_start, 6);
   instr->mclen = 6; // known
   instr->mcoff = 0; // need to work on later?
-  if (instr_disasm(instr, dcr) < 0) {
+  if (instr_disasm(instr, dcr) == 0) {
     fprintf(stderr, "instr_disasm: not an instruction.\n");
   } else {
     instr_print(instr, stdout, INSTR_PRINT_HEX);
@@ -95,7 +95,19 @@ int main(int argc, char *argv[]) {
   }
 
   trie_addval(&instr, 1, trie);
-  
+
+  /* test nonistruction */
+  instr_t badinstr;
+  instr_init(&badinstr);
+  badinstr.mc = malloc(5);
+  memcpy(badinstr.mc, banks.arr[0].b_start, 5);
+  badinstr.mclen = 5;
+  badinstr.mcoff = 0;
+  if (instr_disasm(&badinstr, dcr)) {
+    instr_print(&badinstr, stdout, INSTR_PRINT_DISASM);
+  } else {
+    fprintf(stderr, "instr_disasm: not an instructino.\n");
+  }
   //instr_delete(&instr);
   
   /*
