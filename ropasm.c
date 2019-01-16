@@ -80,3 +80,34 @@ void instr_delete(instr_t *instr) {
   free(instr->mc);
 }
 
+int instr_eq(const instr_t *lhs, const instr_t *rhs) {
+  size_t lsize, rsize;
+
+  if ((lsize = lhs->mclen) != (rsize = rhs->mclen)) {
+    return 0;
+  }
+  if (lhs->mcoff != rhs->mcoff) {
+    return 0;
+  }
+  if (memcmp(lhs->mc, rhs->mc, lsize)) {
+    return 0;
+  }
+  return 1; // equal
+}
+
+int instr_print(const instr_t *instr, FILE *f, int mode) {
+  switch (mode) {
+  case INSTR_PRINT_HEX:
+    for (size_t i = 0; i < instr->mclen; ++i) {
+      fprintf(f, "%1.1hx ", instr->mc[i]);
+    }
+    break;
+  case INSTR_PRINT_DISASM:
+    fprintf(f, "%s", instr->disasm);
+    break;
+  default:
+    return -1;
+  }
+  
+  return 0;
+}

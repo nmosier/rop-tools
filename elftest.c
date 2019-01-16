@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <string.h>
 
 #include <libelf.h>
 #include <gelf.h>
@@ -65,21 +66,9 @@ int main(int argc, char *argv[]) {
   //bank_hexdump(&banks.arr[0], stdout);
 
   /* test trie */
+  
   if ((trie = trie_init()) == TRIE_ERROR) {
     perror("trie_init");
-    goto cleanup;
-  }
-  for (size_t i = 1; i <= 5; ++i) {
-    uint8_t *instr = banks.arr[0].b_start;
-    if (trie_addinstr(instr, i, 0, trie) < 0) {
-      perror("trie_addinstr");
-      goto cleanup;
-    }
-  }
-
-  /* print trie */
-  if (trie_print(trie, stdout) < 0) {
-    perror("trie_print");
     goto cleanup;
   }
 
@@ -87,6 +76,44 @@ int main(int argc, char *argv[]) {
   if ((dcr = ropasm_init()) == NULL) {
     goto cleanup;
   }
+  
+  
+  // test: 6 bytes for 1st instruction
+  instr_t instr;
+  instr_init(&instr);
+  instr.mc = malloc(6);
+  memcpy(instr.mc, banks.arr[0].b_start, 6);
+  instr.mclen = 6; // known
+  instr.mcoff = 0; // need to work on later?
+  if (instr_disasm(&instr, dcr) < 0) {
+    fprintf(stderr, "instr_disasm: not an instruction.\n");
+  } else {
+    instr_print(&instr, stdout, INSTR_PRINT_HEX);
+    printf("\n");
+    instr_print(&instr, stdout, INSTR_PRINT_DISASM);
+    printf("\n");
+  }
+  instr_delete(&instr);
+  
+  /*
+  for (size_t i = 1; i <= 5; ++i) {
+    //uint8_t *instr = banks.arr[0].b_start;
+    if 
+    
+        if (trie_addinstr(instr, i, 0, trie) < 0) {
+      perror("trie_addinstr");
+      goto cleanup;
+    }
+    }*/
+
+  /* print trie */
+  /*
+  if (trie_print(trie, stdout) < 0) {
+    perror("trie_print");
+    goto cleanup;
+  }
+  */
+
   
   
   /* success */

@@ -26,64 +26,77 @@ trie_t trie_init() {
   return node;
 }
 
-trie_t trie_addnodeat(uint8_t *instr, size_t len, Elf64_Off off,
-		   trie_node_t *par) {
+trie_node_t *trienode_new(trie_val_t *val) {
   trie_node_t *node;
-  int retv;
 
-  /* init */
-  node = NULL;
-  retv = -1;
-
-  /* alloc & failsafe-init new node */
-  if ((node = malloc(sizeof(*node))) == NULL) {
-    goto cleanup;
-  }
-  memset(node, 0, sizeof(*node));
-  VECTOR_INIT(&node->tn_children);
-  if ((node->tn_val.tv_buf = malloc(len)) == NULL) {
-    goto cleanup;
+  if ((node = malloc(sizeof(*node)))) {
+    memset(node, 0, sizeof(*node));
+    VECTOR_INIT(&node->tn_children);
+    memcpy(&node->tn_val, val, sizeof(*val)); // trie owns data
   }
 
-  /* init new node */
-  memcpy(node->tn_val.tv_buf, instr, len);
-  node->tn_val.tv_len = len;
-  node->tn_val.tv_off = off;
-  node->tn_parent = par;
+  return node;
+}
 
-  /* add new node as child to _par_ (if non-null) */
+trie_t trie_addnodeat(trie_val_t *val, trie_node_t *par) {
+  trie_node_t *node;
+
+  /* create new node */
+  if ((node = trienode_new(val)) == NULL) {
+    return TRIE_ERROR;
+  }
+
+  /* insert into trie */
   if (par) {
     if (VECTOR_INSERT(&node, &par->tn_children) < 0) {
-      goto cleanup;
+      trie_delete(node);
+      return TRIE_ERROR;
     }
   }
 
-
-  /* success */
-  retv = 0;
-  
- cleanup:
-  if (retv < 0) {
-    if (node) {
-      free(node->tn_val.tv_buf);
-      VECTOR_DELETE(&node->tn_children, NULL); // note node will have no children
-      free(node);
-    }
-  }
-
-  if (retv < 0) {
-    return NULL;
-  }
-  return par ? par : node;
+  return node;
 }
 
 // adds instruction to trie by following buffer.
-int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
-		      trie_node_t *curnode);
-int trie_addinstr(uint8_t *instr, size_t len, Elf64_Off off, trie_t trie) {
-  return trie_addinstr_aux(instr, len, off, trie);
+//int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
+//		      trie_node_t *curnode);
+//int trie_addinstr(uint8_t *instr, size_t len, Elf64_Off off, trie_t trie) {
+//  return trie_addinstr_aux(instr, len, off, trie);
+//}
+
+// vals is simple array (not VECTOR!)
+int trie_addval(trie_val_t *vals, size_t cnt, trie_t trie) {
+  trie_node_t *node = trie;
+  
+  /* if cnt = 0, nothing to do */
+  if (cnt == 0) {
+    return 0;
+  }
+
+  size_t child_i, child_cnt;
+  trie_node_t **child_it;
+  child_cnt = node->tn_children.cnt;
+  for (child_i = 0, child_it = node->tn_children.arr; child_i < child_cnt;
+       ++child_i, ++child_it) {
+    trie_node_t *child = *child_it;
+
+    /* if leading value and value of child are equal, 
+     * recursively add to child trie */
+    if (trie_val_eq(&child->tn_val, &vals[0])) {
+      return trie_addval(vals + 1, cnt - 1, child);
+    }
+  }
+
+  /* no value match with child -- create new child  */
+  trie_node_t *newchild;
+  if ((newchild = trie_addnodeat(&vals[0], node)) == TRIE_ERROR) {
+    return -1;
+  }
+  /* recurse on child in case of any trailing values  */
+  return trie_addval(vals + 1, cnt - 1, newchild);
 }
 
+/*
 int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
 			       trie_node_t *curnode) {
   size_t curlen;
@@ -95,17 +108,18 @@ int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
   newinstr = instr + curlen;
 
   /* check if instruction already matches current node */
+/*
   assert (len >= curlen && memcmp(instr, curnode->tn_val.tv_buf, curlen) == 0);
   if (len == curlen) {
     return 0;
   }
   
   /* recursive case */
-  size_t nchildren = curnode->tn_children.cnt;
+/*  size_t nchildren = curnode->tn_children.cnt;
   size_t i;
   
   /* strategy: match prefix of instruction bytes with child's */
-  for (i = 0; i < nchildren; ++i) {
+/* for (i = 0; i < nchildren; ++i) {
     trie_node_t *child;
     size_t childlen;
     
@@ -113,21 +127,22 @@ int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
     childlen = child->tn_val.tv_len;
     if (memcmp(newinstr, child->tn_val.tv_buf, MIN(childlen, newlen)) == 0) {
       /* found match */
-      break;
+/*     break;
     }
   }
   
   if (i == nchildren) {
     /* child match not found; add new child */
-    if (trie_addnodeat(newinstr, newlen, off, curnode) == NULL) {
+/*    if (trie_addnodeat(newinstr, newlen, off, curnode) == NULL) {
       return -1;
     }
     return 0;
   }
 
   /* child match found -- recursive call */     
-  return trie_addinstr_aux(newinstr, newlen, off, curnode->tn_children.arr[i]);
+/*  return trie_addinstr_aux(newinstr, newlen, off, curnode->tn_children.arr[i]);
 }
+*/
 
 // returns in for compliance with VECTOR_DELETE
 int trie_delete_aux(trie_node_t **nodep);
@@ -140,19 +155,49 @@ int trie_delete_aux(trie_node_t **nodep) {
 
   if (node != TRIE_ERROR) {
     VECTOR_DELETE(&node->tn_children, trie_delete_aux);
-    free(node->tn_val.tv_buf);
+    trie_val_delete(&node->tn_val);
     free(node);
   }
 
-  return -0;
+  return 0;
 }
 
-int trie_print_aux(trie_node_t *node, FILE *f, const uint8_t *prefix,
-		   size_t prefix_len);
+int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
+		   size_t prefix_cnt);
 int trie_print(trie_t trie, FILE *f) {
-  return trie_print_aux(trie, f, NULL, 0);
+  const trie_val_t *vals[TRIE_PRINT_MAXPREFIX];
+  return trie_print_aux(trie, f, vals, 0);
 }
 
+
+int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
+		   size_t prefix_cnt) {
+  /* print current node */
+  
+  /* print prefix of node */
+  for (size_t i = 0; i < prefix_cnt; ++i) {
+    trie_val_print(prefix[i], f, INSTR_PRINT_DISASM);
+    fprintf(f, "\t");
+  }
+  /* pritn node value */
+  trie_val_print(&node->tn_val, f, INSTR_PRINT_DISASM);
+  fprintf(f, "\n");
+
+  /* print children nodes */
+  size_t children_cnt = node->tn_children.cnt;
+  if (prefix_cnt == TRIE_PRINT_MAXPREFIX) {
+    return -1;
+  }
+  prefix[prefix_cnt] = &node->tn_val;
+  for (size_t i = 0; i < children_cnt; ++i) {
+    trie_node_t *child = node->tn_children.arr[i];
+    trie_print_aux(child, f, prefix, prefix_cnt + 1);
+  }
+
+  return 0;
+}
+
+/*
 int trie_print_aux(trie_node_t *node, FILE *f, const uint8_t *prefix,
 		    size_t prefix_len) {
   uint8_t *curinstr; // current instruction
@@ -166,13 +211,13 @@ int trie_print_aux(trie_node_t *node, FILE *f, const uint8_t *prefix,
   memcpy(curinstr + prefix_len, node->tn_val.tv_buf, node->tn_val.tv_len);
   
   /* print self */
-  for (size_t i = 0; i < curinstr_len; ++i) {
+/*  for (size_t i = 0; i < curinstr_len; ++i) {
     fprintf(f, "0x%2.2hx ", curinstr[i]);
   }
   fprintf(f, "\n");
 
   /* print children */
-  for (size_t i = 0; i < node->tn_children.cnt; ++i) {
+/*  for (size_t i = 0; i < node->tn_children.cnt; ++i) {
     if (trie_print_aux(node->tn_children.arr[i], f, curinstr, curinstr_len) < 0) {
       free(curinstr);
       return -1;
@@ -182,3 +227,4 @@ int trie_print_aux(trie_node_t *node, FILE *f, const uint8_t *prefix,
   free(curinstr);
   return 0;
 }
+*/
