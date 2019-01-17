@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
     printf("\n");
   }
 
-  instr_t *instrp = memdup(&instr, sizeof(instr));
-  trie_addval(&instrp, 1, trie);
+  //instr_t *instrp = memdup(&instr, sizeof(instr));
+  trie_addval(&instr, 1, trie);
 
   /* test nonistruction */
   instr_t badinstr;

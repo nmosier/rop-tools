@@ -32,8 +32,7 @@ trie_node_t *trienode_new(trie_val_t *val) {
   if ((node = malloc(sizeof(*node)))) {
     memset(node, 0, sizeof(*node));
     VECTOR_INIT(&node->tn_children);
-    //memcpy(&node->tn_val, val, sizeof(*val)); // trie owns data
-    node->tn_val = val;
+    memcpy(&node->tn_val, val, sizeof(*val));
   }
 
   return node;
@@ -66,7 +65,7 @@ trie_t trie_addnodeat(trie_val_t *val, trie_node_t *par) {
 //}
 
 // vals is simple array (not VECTOR!)
-int trie_addval(trie_val_t **vals, size_t cnt, trie_t trie) {
+int trie_addval(trie_val_t *vals, size_t cnt, trie_t trie) {
   trie_node_t *node = trie;
   
   /* if cnt = 0, nothing to do */
@@ -83,14 +82,14 @@ int trie_addval(trie_val_t **vals, size_t cnt, trie_t trie) {
 
     /* if leading value and value of child are equal, 
      * recursively add to child trie */
-    if (trie_val_eq(child->tn_val, vals[0])) {
+    if (trie_val_eq(&child->tn_val, vals + 0)) {
       return trie_addval(vals + 1, cnt - 1, child);
     }
   }
 
   /* no value match with child -- create new child  */
   trie_node_t *newchild;
-  if ((newchild = trie_addnodeat(vals[0], node)) == TRIE_ERROR) {
+  if ((newchild = trie_addnodeat(vals + 0, node)) == TRIE_ERROR) {
     return -1;
   }
   /* recurse on child in case of any trailing values  */
@@ -108,7 +107,6 @@ int trie_delete_aux(trie_node_t **nodep) {
 
   if (node != TRIE_ERROR) {
     VECTOR_DELETE(&node->tn_children, trie_delete_aux);
-    trie_val_delete(node->tn_val);
     free(node);
   }
 
@@ -126,9 +124,7 @@ int trie_print(trie_t trie, FILE *f) {
 int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
 		   size_t prefix_cnt) {
   /* print current value's address */
-  if (node->tn_val) {
-    fprintf(f, "0x%lx:\n", node->tn_val->mcoff);
-  }
+  fprintf(f, "0x%lx:\n", node->tn_val.mcoff);
   
   /* print prefix of node */
   for (size_t i = 0; i < prefix_cnt; ++i) {
@@ -138,7 +134,7 @@ int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
     }
   }
   /* pritn node value */
-  trie_val_print(node->tn_val, f, INSTR_PRINT_DISASM);
+  trie_val_print(&node->tn_val, f, INSTR_PRINT_DISASM);
   fprintf(f, "\n");
 
   /* print children nodes */
@@ -146,7 +142,7 @@ int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
   if (prefix_cnt == TRIE_PRINT_MAXPREFIX) {
     return -1;
   }
-  prefix[prefix_cnt] = node->tn_val;
+  prefix[prefix_cnt] = &node->tn_val;
   for (size_t i = 0; i < children_cnt; ++i) {
     trie_node_t *child = node->tn_children.arr[i];
     trie_print_aux(child, f, prefix, prefix_cnt + 1);

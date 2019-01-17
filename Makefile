@@ -1,4 +1,4 @@
-CFLAGS=-c -g -Wall -pedantic -Wno-comment
+CFLAGS=-c -g -Wall -pedantic -Wno-comment -Werror
 LIBS=-lelf `llvm-config --cxxflags --libs` `llvm-config --ldflags`
 OBJS=elftest.o ropelf.o util.o trie.o vec.o ropasm.o ropalg.o
 
