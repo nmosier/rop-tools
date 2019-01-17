@@ -125,12 +125,17 @@ int trie_print(trie_t trie, FILE *f) {
 
 int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
 		   size_t prefix_cnt) {
-  /* print current node */
+  /* print current value's address */
+  if (node->tn_val) {
+    fprintf(f, "0x%lx:\n", node->tn_val->mcoff);
+  }
   
   /* print prefix of node */
   for (size_t i = 0; i < prefix_cnt; ++i) {
-    trie_val_print(prefix[i], f, INSTR_PRINT_DISASM);
-    fprintf(f, "\t");
+    if (prefix[i]) {
+      trie_val_print(prefix[i], f, INSTR_PRINT_DISASM);
+      fprintf(f, "\n");
+    }
   }
   /* pritn node value */
   trie_val_print(node->tn_val, f, INSTR_PRINT_DISASM);
@@ -149,35 +154,3 @@ int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
 
   return 0;
 }
-
-/*
-int trie_print_aux(trie_node_t *node, FILE *f, const uint8_t *prefix,
-		    size_t prefix_len) {
-  uint8_t *curinstr; // current instruction
-  size_t curinstr_len;
-
-  curinstr_len = prefix_len + node->tn_val.tv_len;
-  if ((curinstr = malloc(curinstr_len)) == NULL) {
-    return -1;
-  }
-  memcpy(curinstr, prefix, prefix_len);
-  memcpy(curinstr + prefix_len, node->tn_val.tv_buf, node->tn_val.tv_len);
-  
-  /* print self */
-/*  for (size_t i = 0; i < curinstr_len; ++i) {
-    fprintf(f, "0x%2.2hx ", curinstr[i]);
-  }
-  fprintf(f, "\n");
-
-  /* print children */
-/*  for (size_t i = 0; i < node->tn_children.cnt; ++i) {
-    if (trie_print_aux(node->tn_children.arr[i], f, curinstr, curinstr_len) < 0) {
-      free(curinstr);
-      return -1;
-    }
-  }
-
-  free(curinstr);
-  return 0;
-}
-*/

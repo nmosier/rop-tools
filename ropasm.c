@@ -15,8 +15,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "ropasm.h"
+#include "vec.h"
 
 //LLVMDisasmContextRef dcr;
 
@@ -44,16 +46,6 @@ LLVMDisasmContextRef ropasm_init() {
 
   return dcr;
 
-  /*
-  uint8_t bytes[] = {0xc3};
-  char str[16];
-  
-  if (LLVMDisasmInstruction(dcr, bytes, 1, 0x100, str, 16) == 0) {
-    fprintf(stderr, "not valid instruction.\n");
-  } else {
-    fprintf(stderr, "%s\n", str);
-  }
-  */
 }
 
 void ropasm_end(LLVMDisasmContextRef dcr) {
@@ -67,20 +59,33 @@ void instr_init(instr_t *instr) {
   memset(instr, 0, sizeof(*instr));
 }
 
+/*allocates new instruction; initialzies with gien params; attempts to disasm
+  ( if dcr is non-null) */
+int instr_new(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
+		   LLVMDisasmContextRef dcr, instr_t **instrp) {
+  instr_t *newinstr;
+
+  if ((newinstr = malloc(sizeof(*newinstr))) == NULL) {
+    return INSTR_ERR;
+  }
+  assert (mclen <= INSTR_MC_MAXLEN);
+  memcpy(newinstr->mc, mc, mclen);
+  newinstr->mclen = mclen;
+  newinstr->mcoff = mcoff;
+
+  if (dcr) {
+    return instr_disasm(newinstr, dcr);
+  }
+  return INSTR_OK;
+}
+
 int instr_disasm(instr_t *instr, LLVMDisasmContextRef dcr) {
   if ((LLVMDisasmInstruction(dcr, instr->mc, instr->mclen, instr->mcoff,
 			     instr->disasm, INSTR_DISASM_MAXLEN)) == 0) {
-    return 0; // not a valid instruction
+    return INSTR_BAD;
   }
 
-  return 1; // success
-}
-
-void instr_delete(instr_t *instr) {
-  if (instr) {
-    free(instr->mc);
-    free(instr);
-  }
+  return INSTR_OK;
 }
 
 int instr_eq(const instr_t *lhs, const instr_t *rhs) {
@@ -115,4 +120,15 @@ int instr_print(const instr_t *instr, FILE *f, int mode) {
   }
   
   return 0;
+}
+
+/* simple wrapper functions */
+void instrs_init(instrs_t *instrs) {
+  VECTOR_INIT(instrs);
+}
+int instrs_insert(instr_t *instr, instrs_t *instrs) {
+  return VECTOR_INSERT(instr, instrs);
+}
+void instrs_delete(instrs_t *instrs) {
+  VECTOR_DELETE(instrs, NULL);
 }

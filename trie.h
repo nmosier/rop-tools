@@ -11,7 +11,7 @@
 
 typedef instr_t trie_val_t;
 #define trie_val_eq instr_eq
-#define trie_val_delete instr_delete
+#define trie_val_delete free
 #define trie_val_print instr_print
 
 #define TRIE_PRINT_MAXPREFIX 256
