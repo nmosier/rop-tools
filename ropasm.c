@@ -61,20 +61,16 @@ void instr_init(instr_t *instr) {
 
 /*allocates new instruction; initialzies with gien params; attempts to disasm
   ( if dcr is non-null) */
-int instr_new(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
-		   LLVMDisasmContextRef dcr, instr_t **instrp) {
-  instr_t *newinstr;
+int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
+		   LLVMDisasmContextRef dcr, instr_t *instr) {
 
-  if ((newinstr = malloc(sizeof(*newinstr))) == NULL) {
-    return INSTR_ERR;
-  }
   assert (mclen <= INSTR_MC_MAXLEN);
-  memcpy(newinstr->mc, mc, mclen);
-  newinstr->mclen = mclen;
-  newinstr->mcoff = mcoff;
+  memcpy(instr->mc, mc, mclen);
+  instr->mclen = mclen;
+  instr->mcoff = mcoff;
 
   if (dcr) {
-    return instr_disasm(newinstr, dcr);
+    return instr_disasm(instr, dcr);
   }
   return INSTR_OK;
 }

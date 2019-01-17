@@ -26,7 +26,7 @@ typedef struct instr {
 } instr_t;
 
 typedef struct instrs {
-  instr_t **arr;
+  instr_t *arr;
   size_t cnt;
   size_t len;
 } instrs_t;
@@ -41,6 +41,8 @@ void instr_init(instr_t *instr);
 int instr_disasm(instr_t *instr, LLVMDisasmContextRef dcr);
 int instr_eq(const instr_t *lhs, const instr_t *rhs);
 int instr_print(const instr_t *instr, FILE *f, int mode);
+int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
+		 LLVMDisasmContextRef dcr, instr_t *instr);
 
 /* `instrs' prototypes */
 void instrs_init(instrs_t *instrs);
