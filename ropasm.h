@@ -47,6 +47,7 @@ int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
 
 /* `instrs' prototypes */
 void instrs_init(instrs_t *instrs);
-int instrs_insert(instr_t *instr, instrs_t *instrs);
+int instrs_push(instr_t *instr, instrs_t *instrs);
+int instrs_pop(instr_t *instr, instrs_t *instrs);
 
 #endif

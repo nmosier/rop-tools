@@ -118,7 +118,7 @@ void instrs_init(instrs_t *instrs) {
 }
 
 #define INSTRS_ARR_MINLEN 16
-int instrs_insert(instr_t *instr, instrs_t *instrs) {
+int instrs_push(instr_t *instr, instrs_t *instrs) {
   if (instrs->cnt == instrs->len) {
     /* resize */
     instr_t *newarr;
@@ -135,3 +135,16 @@ int instrs_insert(instr_t *instr, instrs_t *instrs) {
 }
 
 
+int instrs_pop(instr_t *instr, instrs_t *instrs) {
+  if (instrs->cnt == 0) {
+    return -1;
+  }
+  
+  if (instr) {
+    memcpy(instr, &instrs->arr[instrs->cnt - 1], sizeof(*instr));
+  }
+
+  --instrs->cnt;
+  
+  return 0;
+}

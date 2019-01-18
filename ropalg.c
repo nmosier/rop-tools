@@ -25,10 +25,9 @@ int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr) {
   return trie_width(gadtrie);
 }
 
+int gadgets_buildfrom(uint8_t *ret, uint8_t *start, Elf64_Off offset,
+		      trie_t gadtrie, LLVMDisasmContextRef dcr);
 int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr) {
-
-  //  assert (trie_validate(gadtrie) == TRIE_VALIDATE_OK);
-  
   uint8_t *ret_it; // finds ret opcodes 
   uint8_t *start;
 
@@ -48,64 +47,10 @@ int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
     /* checks */
     assert (*ret_it == OPCODE_RET);
 
-    /* find gadgets starting at the found "ret" opcode */
-    uint8_t *instr_rbegin_it; // invariant: always reverse beginning
-                              // of instruction upon loop entry
-    instrs_t gadget;
-    instr_t instr;
-
-    instr_init(&instr);
-    instrs_init(&gadget);
-
-    instr_rbegin_it = ret_it;
-
-    if (instr_rbegin_it - start + bank->b_off == 0xf66d9) {
-      fprintf(stderr, "FOUND\n");
-      getc(stdin);
-    }
-    
-    /* instructions loop */
-    do {
-      /* instruction loop */
-      /* note: instr_begin_it points to reverse beginning of instruction */
-      size_t instr_len;
-      for (instr_len = 1; instr_len <= INSTR_MC_MAXLEN
-	     && instr_rbegin_it - instr_len + 1 >= start; ++instr_len) {
-
-	memcpy(instr.mc, instr_rbegin_it - instr_len + 1, instr_len);
-	instr.mclen = instr_len;
-	/* compute the instruction offset using this mathematical mess */
-	instr.mcoff = instr_rbegin_it - start - instr_len + bank->b_off + 1;
-
-	/* attempt disassembly */
-	if (instr_disasm(&instr, dcr) == INSTR_OK) {
-	  /* make sure it's not empty */
-	  if (instr.disasm[0]) {
-	    break; // found valid instruction
-	  }
-	}
-      }
-      if (instr_len > INSTR_MC_MAXLEN) {
-	//fprintf(stderr, "disasm: (no valid instructions)\n");
-	break; // found no valid instructions (?)
-      }
-
-      /* append instruction to instructionst list */
-      if (instrs_insert(&instr, &gadget) < 0) {
-	return -1; // internal error
-      }
-
-      /* advance instruction rbegin poiner */
-      instr_rbegin_it -= instr_len;
-    } while (!gadget_boundary(instr_rbegin_it) && gadget.cnt <= GADGET_MAXLEN);
-
-    gadget_trunc(&gadget);
-    if (!gadget_boring(&gadget)) {
-      if (trie_addval(gadget.arr, gadget.cnt, gadtrie) < 0) {
-	return -1; // internal error 
-      }
-    }
-    
+    if (gadgets_buildfrom(ret_it, start, bank->b_off, gadtrie, dcr) < 0) {
+      fprintf(stderr, "gadgets_buildfrom: internal error\n");
+      return -1;
+    }    
   }
   
   return 0;
@@ -174,5 +119,65 @@ int gadget_boring(instrs_t *gadget) {
     return 1;
   }
 
+  return 0;
+}
+
+/* build from one RET command (to which the ptr points */
+
+int gadgets_buildfrom_aux(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
+			  trie_t gadtrie, LLVMDisasmContextRef dcr,
+			  instrs_t *gadget);
+int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
+		      trie_t gadtrie, LLVMDisasmContextRef dcr) {
+  instrs_t gadget;
+  instrs_init(&gadget);
+
+  return gadgets_buildfrom_aux(ret_it, start, offset, gadtrie, dcr, &gadget);
+}
+
+int gadgets_buildfrom_aux(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
+			  trie_t gadtrie, LLVMDisasmContextRef dcr,
+			  instrs_t *gadget) {
+  uint8_t *instr_it = ret_it; // invariant: always points to beginning of instruction
+  instr_t instr;
+  instr_init(&instr);
+
+  /* instructions loop */
+  do {
+    size_t instr_len;
+    for (instr_len = 1; instr_len <= INSTR_MC_MAXLEN
+	   && instr_it - instr_len + 1 >= start; ++instr_len) {
+      memcpy(instr.mc, instr_it - instr_len + 1, instr_len);
+      instr.mclen = instr_len;
+      /* compute the instruction offset using this mathematical mess */
+      instr.mcoff = instr_it - start - instr_len + offset + 1;
+
+      /* attempt disassembly */
+      if (instr_disasm(&instr, dcr) == INSTR_OK) {
+	/* make sure it's not empty */
+	if (instr.disasm[0]) {
+	  break; // found valid instruction
+	}
+      }
+    }
+    if (instr_len > INSTR_MC_MAXLEN) {
+      break; // found no valid instructions (?)
+    }
+
+    /* append instruction to instructionst list */
+    if (instrs_push(&instr, gadget) < 0) {
+      return -1; // internal error
+    }
+
+    instr_it -= instr_len;
+  } while (!gadget_boundary(instr_it) && gadget->cnt <= GADGET_MAXLEN);
+
+  gadget_trunc(gadget);
+  if (!gadget_boring(gadget)) {
+    if (trie_addval(gadget->arr, gadget->cnt, gadtrie) < 0) {
+      return -1; // internal error 
+    }
+  }  
+  
   return 0;
 }
