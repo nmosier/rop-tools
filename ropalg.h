@@ -9,11 +9,13 @@
 #define OPCODE_POP_RBP 0x5d
 
 
-#define GADGET_MAXLEN 16
+#define GADGET_MAXLEN 4
 
-int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr);
-int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr);
-int gadget_boundary(uint8_t *ptr);
+int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
+		 int maxlen);
+int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr,
+			int maxlen);
+int gadget_boundary(instr_t *instr);
 void gadget_trunc(instrs_t *gadget);
 int gadget_boring(instrs_t *gadget);
 

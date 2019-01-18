@@ -28,10 +28,12 @@ int main(int argc, char *argv[]) {
   int fd;
   int exitno;
   const char *path;
-  const char *optstring = "o:d:h";
-  const char *usage = "usage: %s elf_file\n";
+  const char *optstring = "o:d:hn:";
+  const char *usage = "usage: %s [-o outpath] [-d dumppath]" \
+                      "[-n gadgetlen] elf_file\n";
   char *gadgets_outpath = GADGETS_OUTPATH_DEFAULT;
   char *hexdump_outpath = HEXDUMP_OUTPATH_DEFAULT;
+  int gadget_len = GADGET_MAXLEN;
 
   Elf *elf;
   rop_banks_t banks;
@@ -41,6 +43,8 @@ int main(int argc, char *argv[]) {
   /* parse arguments */
   int optc;
   int optvalid = 1;
+  char *endptr;
+  long int gadget_len_tmp;
   while ((optc = getopt(argc, argv, optstring)) >= 0) {
     switch (optc) {
     case 'o':
@@ -48,6 +52,16 @@ int main(int argc, char *argv[]) {
       break;
     case 'd':
       hexdump_outpath = optarg;
+      break;
+    case 'n':
+      gadget_len_tmp = strtol(optarg, &endptr, 10);
+      if (*endptr != '\0' || gadget_len_tmp <= 0) {
+	fprintf(stderr, "%s: -n: gadget length must be a positive integer\n",
+		argv[0]);
+	optvalid = 0;
+      } else {
+	gadget_len = gadget_len_tmp;
+      }
       break;
     case 'h':
       fprintf(stderr, usage, argv[0]);
@@ -105,7 +119,7 @@ int main(int argc, char *argv[]) {
 
   /* test algorithm */
   int gadgets_found;
-  if ((gadgets_found = gadgets_find(&banks, trie, dcr)) < 0) {
+  if ((gadgets_found = gadgets_find(&banks, trie, dcr, gadget_len)) < 0) {
     perror("gadgets_find");
     goto cleanup;
   }
