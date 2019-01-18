@@ -4,7 +4,9 @@
 #define OPCODE_RET 0xc3
 #define OPCODE_RETF 0xcb
 #define OPCODE_RETFA 0xca
-#define OPCODE_JMP 0xea
+//#define OPCODE_JMP 0xea
+//#define OPCODE_JNE1 0x0f
+//#define OPCODE_JNE2 0x75
 #define OPCODE_LEAVE 0xc9
 #define OPCODE_POP_RBP 0x5d
 

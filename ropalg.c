@@ -83,7 +83,10 @@ void gadget_trunc_prefixes(instrs_t *gadget) {
   const uint8_t boring_prefixes[] = {OPCODE_RET,
 				     OPCODE_RETF,
 				     OPCODE_RETFA,
-				     OPCODE_JMP,};
+				     //OPCODE_JMP,
+				     //OPCODE_JNE1,
+				     //OPCODE_JNE2,
+  };
   size_t instr_i;
   instr_t *instr_it;
 
