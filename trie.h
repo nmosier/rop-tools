@@ -43,7 +43,12 @@ typedef trie_node_t *trie_t;
 
 trie_t trie_init();
 void trie_delete(trie_t trie);
+trie_node_t *trienode_new(trie_val_t *val, trie_node_t *par);
 int trie_addval(trie_val_t *vals, size_t cnt, trie_t trie);
-int trie_print(trie_t trie, FILE *f);
+int trie_validate(trie_t trie);
+int trie_print(trie_t trie, FILE *f, int mode);
+int trie_width(trie_t trie);
+
+enum trie_validate_retv { TRIE_VALIDATE_OK, TRIE_VALIDATE_NULLCHILD };
 
 #endif

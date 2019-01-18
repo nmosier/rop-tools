@@ -5,8 +5,8 @@ OBJS=elftest.o ropelf.o util.o trie.o vec.o ropasm.o ropalg.o
 elftest: $(OBJS)
 	gcc $(LIBS) -o $@ $^
 
-%.o: %.c
-	gcc $(CFLAGS) -o $@ $^
+%.o: %.c %.h
+	gcc $(CFLAGS) -o $*.o $*.c
 
 .PHONY: clean
 clean:

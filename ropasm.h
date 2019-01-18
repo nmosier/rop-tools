@@ -11,12 +11,13 @@
 #include <llvm-c/Disassembler.h>
 
 #define INSTR_DISASM_MAXLEN 64 // this is just a guess...
-#define INSTR_MC_MAXLEN     32 // is only 15, but just to be safe
+#define INSTR_MC_MAXLEN     15 // is only 15, but just to be safe
 
 enum instr_retv { INSTR_OK, INSTR_BAD, INSTR_ERR };
 
-#define INSTR_PRINT_HEX    0
-#define INSTR_PRINT_DISASM 1
+/* can be OR'ed together */
+#define INSTR_PRINT_HEX    1
+#define INSTR_PRINT_DISASM 2
 
 typedef struct instr {
   uint8_t mc[INSTR_MC_MAXLEN]; // machine code bytes
@@ -47,6 +48,5 @@ int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
 /* `instrs' prototypes */
 void instrs_init(instrs_t *instrs);
 int instrs_insert(instr_t *instr, instrs_t *instrs);
-void instrs_delete(instrs_t *instrs);
 
 #endif

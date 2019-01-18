@@ -18,7 +18,7 @@
 #include <assert.h>
 
 #include "ropasm.h"
-#include "vec.h"
+#include "util.h"
 
 //LLVMDisasmContextRef dcr;
 
@@ -76,8 +76,9 @@ int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
 }
 
 int instr_disasm(instr_t *instr, LLVMDisasmContextRef dcr) {
-  if ((LLVMDisasmInstruction(dcr, instr->mc, instr->mclen, instr->mcoff,
-			     instr->disasm, INSTR_DISASM_MAXLEN)) == 0) {
+  if (LLVMDisasmInstruction(dcr, instr->mc, instr->mclen, instr->mcoff,
+			     instr->disasm, INSTR_DISASM_MAXLEN)
+      != instr->mclen) {
     return INSTR_BAD;
   }
 
@@ -90,9 +91,6 @@ int instr_eq(const instr_t *lhs, const instr_t *rhs) {
   if ((lsize = lhs->mclen) != (rsize = rhs->mclen)) {
     return 0;
   }
-  if (lhs->mcoff != rhs->mcoff) {
-    return 0;
-  }
   if (memcmp(lhs->mc, rhs->mc, lsize)) {
     return 0;
   }
@@ -101,17 +99,13 @@ int instr_eq(const instr_t *lhs, const instr_t *rhs) {
 
 int instr_print(const instr_t *instr, FILE *f, int mode) {
   if (instr) {
-    switch (mode) {
-    case INSTR_PRINT_HEX:
+    if (mode & INSTR_PRINT_HEX) {
       for (size_t i = 0; i < instr->mclen; ++i) {
 	fprintf(f, "%1.1hx ", instr->mc[i]);
       }
-    break;
-    case INSTR_PRINT_DISASM:
+    }
+    if (mode & INSTR_PRINT_DISASM) {
       fprintf(f, "%s", instr->disasm);
-      break;
-    default:
-      return -1;
     }
   }
   
@@ -120,11 +114,24 @@ int instr_print(const instr_t *instr, FILE *f, int mode) {
 
 /* simple wrapper functions */
 void instrs_init(instrs_t *instrs) {
-  VECTOR_INIT(instrs);
+  memset(instrs, 0, sizeof(*instrs));
 }
+
+#define INSTRS_ARR_MINLEN 16
 int instrs_insert(instr_t *instr, instrs_t *instrs) {
-  return VECTOR_INSERT(instr, instrs);
+  if (instrs->cnt == instrs->len) {
+    /* resize */
+    instr_t *newarr;
+    size_t newlen = MAX(INSTRS_ARR_MINLEN, instrs->len * 2);
+    if ((newarr = realloc(instrs->arr, newlen * sizeof(*instrs->arr))) == NULL) {
+      return -1;
+    }
+    instrs->arr = newarr;
+    instrs->len = newlen;
+  }
+
+  memcpy(instrs->arr + instrs->cnt++, instr, sizeof(*instr));
+  return 0;
 }
-void instrs_delete(instrs_t *instrs) {
-  VECTOR_DELETE(instrs, NULL);
-}
+
+

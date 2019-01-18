@@ -31,7 +31,7 @@ int vector_resize(size_t newlen, void **oldarr, size_t *oldcnt, size_t *oldlen, 
       return -1;
    }
 
-   memset(newarr, 0, newlen * esize);
+   // memset(newarr, 0, newlen * esize); WHY?
 
    *oldarr = newarr;
    *oldlen = newlen;

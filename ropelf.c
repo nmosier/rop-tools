@@ -72,7 +72,8 @@ int bank_create(int fd, Elf64_Phdr *phdr, rop_bank_t *bank) {
 
   bank->b_start = addr;
   bank->b_len = phdr->p_filesz;
-
+  bank->b_off = phdr->p_offset;
+    
   return 0;
 }
 

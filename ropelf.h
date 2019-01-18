@@ -12,6 +12,7 @@
 typedef struct {
   uint8_t *b_start;
   uint64_t b_len;
+  Elf64_Off b_off;
 } rop_bank_t; // bank as in a bank of instructions
 
 typedef struct {

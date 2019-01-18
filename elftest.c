@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <libelf.h>
 #include <gelf.h>
@@ -12,36 +13,63 @@
 #include "trie.h"
 #include "util.h"
 #include "ropasm.h"
+#include "ropalg.h"
+
 
 #define VERBOSE 1
-
 #define EXIT_FAILED 3 // exit status
-
 #define PHDRS_MAXSIZE 10
+
+/* defaults */
+#define GADGETS_OUTPATH_DEFAULT "gadgets.asm"
+#define HEXDUMP_OUTPATH_DEFAULT "bank.dmp"
 
 int main(int argc, char *argv[]) {
   int fd;
   int exitno;
   const char *path;
+  const char *optstring = "o:d:h";
+  const char *usage = "usage: %s elf_file\n";
+  char *gadgets_outpath = GADGETS_OUTPATH_DEFAULT;
+  char *hexdump_outpath = HEXDUMP_OUTPATH_DEFAULT;
 
   Elf *elf;
   rop_banks_t banks;
   trie_t trie;
   LLVMDisasmContextRef dcr;
 
+  /* parse arguments */
+  int optc;
+  int optvalid = 1;
+  while ((optc = getopt(argc, argv, optstring)) >= 0) {
+    switch (optc) {
+    case 'o':
+      gadgets_outpath = optarg;
+      break;
+    case 'd':
+      hexdump_outpath = optarg;
+      break;
+    case 'h':
+      fprintf(stderr, usage, argv[0]);
+      optvalid = 0;
+      break;
+    default:
+      optvalid = 0;
+      break;
+    }
+  }
+  if (!optvalid) {
+    exit(1);
+  }
+  /* set src file */
+  path = argv[optind];
+  
   /* initialization */
   fd = -1;
   exitno = EXIT_FAILED;
   banks_init(&banks);
   trie = TRIE_ERROR;
   dcr = NULL;
-  
-  if (argc != 2) {
-    fprintf(stderr, "usage: %s elf_file\n", argv[0]);
-    exit(1);
-  }
-  path = argv[1];
-
 
   /* open file to parse */
   if ((fd = open(path, O_RDONLY, 0)) < 0) {
@@ -57,16 +85,14 @@ int main(int argc, char *argv[]) {
     perror("banks_create");
     goto cleanup;
   }
-
+  
   if (VERBOSE) {
     fprintf(stderr, "successfully created %zu banks.\n", banks.len);
   }
 
   /* dump exec hex */
-  //bank_hexdump(&banks.arr[0], stdout);
 
-  /* test trie */
-  
+  /* test trie */  
   if ((trie = trie_init()) == TRIE_ERROR) {
     perror("trie_init");
     goto cleanup;
@@ -75,57 +101,26 @@ int main(int argc, char *argv[]) {
   /* test disasm init */
   if ((dcr = ropasm_init()) == NULL) {
     goto cleanup;
-  }
-  
-  
-  // test: 6 bytes for 1st instruction
-  //instr_t *instr = malloc(sizeof(*instr));
-  instr_t instr;
-  instr_init(&instr);
-  memcpy(instr.mc, banks.arr[0].b_start, 6);
-  instr.mclen = 6; // known
-  instr.mcoff = 0; // need to work on later?
-  if (instr_disasm(&instr, dcr) == INSTR_BAD) {
-    fprintf(stderr, "instr_disasm: not an instruction.\n");
-  } else {
-    instr_print(&instr, stdout, INSTR_PRINT_HEX);
-    printf("\n");
-    instr_print(&instr, stdout, INSTR_PRINT_DISASM);
-    printf("\n");
-  }
+  }  
 
-  //instr_t *instrp = memdup(&instr, sizeof(instr));
-  trie_addval(&instr, 1, trie);
-
-  /* test nonistruction */
-  instr_t badinstr;
-  instr_init(&badinstr);
-  memcpy(badinstr.mc, banks.arr[0].b_start, 5);
-  badinstr.mclen = 5;
-  badinstr.mcoff = 0;
-  if (instr_disasm(&badinstr, dcr)) {
-    instr_print(&badinstr, stdout, INSTR_PRINT_DISASM);
-  } else {
-    fprintf(stderr, "instr_disasm: not an instructino.\n");
-  }
-  //instr_delete(&instr);
-  
-  /*
-  for (size_t i = 1; i <= 5; ++i) {
-    //uint8_t *instr = banks.arr[0].b_start;
-    if 
-    
-        if (trie_addinstr(instr, i, 0, trie) < 0) {
-      perror("trie_addinstr");
-      goto cleanup;
-    }
-    }*/
-
-  /* print trie */
-  if (trie_print(trie, stdout) < 0) {
-    perror("trie_print");
+  /* test algorithm */
+  int gadgets_found;
+  if ((gadgets_found = gadgets_find(&banks, trie, dcr)) < 0) {
+    perror("gadgets_find");
     goto cleanup;
   }
+  fprintf(stderr, "gadgets found: %d\n", gadgets_found);
+
+  /* dump results */ 
+  FILE *gadgetf, *hexdumpf;
+  
+  gadgetf = fopen(gadgets_outpath, "w");
+  trie_print(trie, gadgetf, INSTR_PRINT_HEX | INSTR_PRINT_DISASM);
+  fclose(gadgetf);
+
+  hexdumpf = fopen(hexdump_outpath, "w");
+  trie_print(trie, hexdumpf, INSTR_PRINT_HEX | INSTR_PRINT_DISASM);
+  fclose(hexdumpf);
   
   
   /* success */
