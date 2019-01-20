@@ -10,6 +10,7 @@
 #define OPCODE_LEAVE 0xc9
 #define OPCODE_POP_RBP 0x5d
 
+#define DISASM_JMP "\tjmp"
 
 #define GADGET_MAXLEN 4
 
