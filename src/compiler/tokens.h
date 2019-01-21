@@ -5,15 +5,16 @@ enum tokens {
 	     ERROR = -1,
 	     DEF = 1, // `:='
 	     ARGSEP, // `,'
-	     COMMENT, // `//' or `;'
-	     MULTICOMMENT, // `/* ... */'
 	     REG,
 	     IDENTIFIER,
 	     MEMLEFT, // `['
 	     MEMRIGHT, // `]'
 	     RET,
+	     DQ,
+	     RESQ,
 	     INDENT,
-	     IMM, // immediate value (address, etc)
+	     INT, // integer constant (address, etc)
+	     IMM64, // `imm64'
 	     SYMBOL, // external symbol, e.g. <malloc>
 };
 

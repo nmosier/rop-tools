@@ -10,8 +10,9 @@ WHITESPACE 	       [ \t]
 		       /* (already consumed) */
 		       /*MULTICOMM	       [^/*\n]**/
 MULTICOMM	       ([^*\n]("*"+[^/\n])?)*"*"*
-
-
+NUMBER_DEC	       [[:digit:]]+
+NUMBER_HEX	       0x[[:xdigit:]]+
+NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 
         /* conditions */
 %x multiline
@@ -49,12 +50,16 @@ MULTICOMM	       ([^*\n]("*"+[^/\n])?)*"*"*
 
 ":="			      { return DEF; }
 ret			      { return RET; }
+imm64			      { return IMM64; }
+dq			      { return DQ; }
+resq			      { return RESQ; }
 			      
 	/* numbers */
-"-"?"0x"?[0-9]+		      { return IMM; }
+{NUMBER}({WHITESPACE}*"+"{WHITESPACE}*{NUMBER})?	{ return INT; }
+
 
 	/* identifiers */
-[A-Z][A-Z0-9]*		      { return IDENTIFIER; }
+[A-Z_][A-Z0-9_]*		      { return IDENTIFIER; }
         /* symbols */
 "<"[[:graph:]]">"		      { return SYMBOL; }
 

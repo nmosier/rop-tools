@@ -14,6 +14,7 @@ extern FILE *yyin;
 
 int lex_file(FILE *infile, FILE *outfile);
 const char *lex_tok2str(int token);
+const char *lex_tok2desc(int token, const char *yytext);
 int lex_dumptok(int lineno, int token, char *strval, FILE *outfile);
 
 int main(int argc, char *argv[]) {
@@ -103,13 +104,14 @@ int lex_file(FILE *infile, FILE *outfile) {
   return 0;
 }
 
-int lex_dumptok(int lineno, int token, char *strval, FILE *outfile) {
-  const char *tokstr;
+int lex_dumptok(int lineno, int token, char *yytext, FILE *outfile) {
+  const char *tokstr, *tokval;
 
   if ((tokstr = lex_tok2str(token)) == NULL) {
     return -1;
   }
-  fprintf(outfile, "%d\t%s\t%s\n", lineno, tokstr, strval ? strval : "");
+  tokval = lex_tok2desc(token, yytext);
+  fprintf(outfile, "%d\t%s\t%s\n", lineno, tokstr, tokval ? tokval : "");
   return 0;
 }
 
@@ -117,16 +119,30 @@ const char *lex_tok2str(int token) {
   switch (token) {
   case DEF: return "DEF";
   case ARGSEP: return "ARGSEP";
-  case COMMENT: return "COMMENT";
-  case MULTICOMMENT: return "MULTICOMMENT";
   case REG: return "REG";
   case IDENTIFIER: return "IDENTIFIER";
   case MEMLEFT: return "MEMLEFT";
   case MEMRIGHT: return "MEMRIGHT";
-  case RET: return "TOK_RET";
+  case RET: return "RET";
+  case DQ: return "DQ";
+  case RESQ: return "RESQ";
   case INDENT: return "INDENT";
-  case IMM: return "IMM";
+  case INT: return "INT";
+  case IMM64: return "IMM64";
   case SYMBOL: return "SYMBOL";
   default: return NULL;
+  }
+}
+
+const char *lex_tok2desc(int token, const char *yytext) {
+  switch (token) {
+  case DEF:
+  case REG:
+  case IDENTIFIER:
+  case INT:
+  case SYMBOL:
+    return yytext;
+  default:
+    return NULL;
   }
 }
