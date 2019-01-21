@@ -130,6 +130,8 @@ const char *lex_tok2str(int token) {
   case INT: return "INT";
   case IMM64: return "IMM64";
   case SYMBOL: return "SYMBOL";
+  case PLUS: return "PLUS";
+  case MINUS: return "MINUS";
   default: return NULL;
   }
 }

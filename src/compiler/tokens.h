@@ -16,6 +16,8 @@ enum tokens {
 	     INT, // integer constant (address, etc)
 	     IMM64, // `imm64'
 	     SYMBOL, // external symbol, e.g. <malloc>
+	     PLUS, // `+'
+	     MINUS, // `-'
 };
 
 extern int lineno;

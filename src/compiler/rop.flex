@@ -47,7 +47,8 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 "["			      { return MEMLEFT; }
 "]"			      { return MEMRIGHT; }
 ","			      { return ARGSEP; }
-
+"+"			      { return PLUS; }
+"-"			      { return MINUS; }
 ":="			      { return DEF; }
 ret			      { return RET; }
 imm64			      { return IMM64; }
@@ -55,7 +56,7 @@ dq			      { return DQ; }
 resq			      { return RESQ; }
 			      
 	/* numbers */
-{NUMBER}({WHITESPACE}*"+"{WHITESPACE}*{NUMBER})?	{ return INT; }
+{NUMBER}		      { return INT; }
 
 
 	/* identifiers */
