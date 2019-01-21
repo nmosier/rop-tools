@@ -20,10 +20,6 @@ MULTICOMM	       ([^*\n]("*"+[^/\n])?)*"*"*
 
 %%
 	/* RULES */
-
-	/* consume rest of line */
-{WHITESPACE}*\n	{ ++lineno; }
-
 	/* single-line comment */
 ("//"|";")[[:print:]]*	{}
 			/* <singleline><<EOF>>	{ yyterminate(); } */
@@ -35,8 +31,13 @@ MULTICOMM	       ([^*\n]("*"+[^/\n])?)*"*"*
 <multiline>{MULTICOMM}\n       { ++lineno; }
 "/*"	   	              { BEGIN(multiline); }
 
-        /* indentation */
-{WHITESPACE}+		{ return INDENT; } 
+			      /* whitespace rules */
+			     /* indentation (after newline) */
+^{WHITESPACE}+		{ return INDENT; }
+	/* consume rest of line */
+{WHITESPACE}+	   {}
+\n	{ ++lineno; }
+
 
 	/* regs */
 "r"([abcd]"x"|[sd]"i"|[0-9]+|"bp") { return REG; }
