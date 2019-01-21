@@ -18,6 +18,7 @@ enum tokens {
 	     SYMBOL, // external symbol, e.g. <malloc>
 	     PLUS, // `+'
 	     MINUS, // `-'
+	     NEWLINE,
 };
 
 extern int lineno;

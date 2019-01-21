@@ -21,11 +21,9 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 
 %%
 	/* RULES */
+
 	/* single-line comment */
 ("//"|";")[[:print:]]*	{}
-			/* <singleline><<EOF>>	{ yyterminate(); } */
-			/* <singleline>\n		{ BEGIN(INITIAL); ++lineno; } */
-
 					
 	/* multiline comment */
 <multiline>{MULTICOMM}"*/"       { BEGIN(INITIAL); }
@@ -37,7 +35,7 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 ^{WHITESPACE}+		{ return INDENT; }
 	/* consume rest of line */
 {WHITESPACE}+	   {}
-\n	{ ++lineno; }
+\n	{ ++lineno; return NEWLINE; }
 
 
 	/* regs */

@@ -132,6 +132,7 @@ const char *lex_tok2str(int token) {
   case SYMBOL: return "SYMBOL";
   case PLUS: return "PLUS";
   case MINUS: return "MINUS";
+  case NEWLINE: return "NEWLINE";
   default: return NULL;
   }
 }
