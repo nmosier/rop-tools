@@ -4,8 +4,8 @@
 #include "ast.h"
 #include "rop.tab.h"
 
-  #define DEBUG 1
-#define LOG(msg) if (DEBUG) fprintf(stderr, "%d: %s\n", lineno, msg)
+  #define LEXER_DEBUG 0
+#define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%d: %s\n", lineno, msg)
 
   int lineno;
 %}
@@ -33,9 +33,10 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 ("//"|";")[[:print:]]*	{}
 					
 	/* multiline comment */
-<multiline>{MULTICOMM}"*/"     { BEGIN(INITIAL); LOG("comment begin"); }
+<multiline>{MULTICOMM}"*/"\n  { ++lineno; BEGIN(INITIAL); LOG("comment end"); }
+<multiline>{MULTICOMM}"*/"  { BEGIN(INITIAL); LOG("comment end"); }
 <multiline>{MULTICOMM}\n       { ++lineno; LOG("comment in");}
-"/*"	   	              { BEGIN(multiline); LOG("comment end"); }
+"/*"	   	              { BEGIN(multiline); LOG("comment begin"); }
 
 			      /* whitespace rules */
 			     /* indentation (after newline) */
@@ -43,7 +44,7 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 	/* consume rest of line */
 {WHITESPACE}+	   {}
 ^[\n] { ++lineno; }
-[\n]+	{ ++lineno; return NEWLINE; }
+[\n]	{ ++lineno; return NEWLINE; }
 
 
 	/* regs */
