@@ -1,17 +1,19 @@
 #ifndef __GRAMMAR_H
 #define __GRAMMAR_H
 
-#include "token.h"
+
+#include <stdint.h>
+//#include "token.h"
 
 /* limits */
 
 struct expression {
-  enum token kind; /* in case of binop, kind = binop token */
+  int kind; /* in case of binop, kind = binop token */
   union {
     struct {
       struct expression *lhs;
       struct expression *rhs;
-    } binop;
+    };
     char *sym;
     char *id;
     int64_t num;
@@ -19,11 +21,15 @@ struct expression {
 };
 
 struct argument {
-  enum argument_kind { ARGUMENT_IMM64, ARGUMENT_REG, ARGUMENT_MEM, ARGUMENT_EXPR };
+  enum argument_kind {ARGUMENT_IMM64,
+		      ARGUMENT_REG,
+		      ARGUMENT_MEM,
+		      ARGUMENT_EXPR
+  } kind;
   union {
     char *name; // optional
     struct expression expr;
-  }
+  };
 };
 
 struct arguments {
@@ -35,7 +41,7 @@ void arguments_init(struct arguments *args);
 int arguments_add(struct argument *arg, struct arguments *args);
 
 struct instruction_prefix {
-  enum token kind;
+  int kind;
   char *val;
 };
 
@@ -58,11 +64,11 @@ struct definition {
 };
 
 struct rule {
-  enum rule { DEFINITION, EQUATE } kind;
+  enum rule_kind { DEFINITION, EQUATE } kind;
   char *id;
   union {
     struct definition definition;
-    struct expression equate
+    struct expression equate;
   };
 };
 
@@ -75,6 +81,6 @@ void rules_init(struct rules *rules);
 int rules_add(struct rule *rule, struct rules *rules);
 
 
-extern yylloc;
+//extern int yylloc;
 
 #endif

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "ast.h"
 
@@ -23,7 +24,7 @@ int arguments_add(struct argument *arg, struct arguments *args) {
     args->argv = argv;
     args->maxc *= 2;
   }
-  memcpy(&args->argv[argc->argc++], arg, sizeof(*arg));
+  memcpy(&args->argv[args->argc++], arg, sizeof(*arg));
   return 0;
 }
 

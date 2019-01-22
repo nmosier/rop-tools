@@ -1,11 +1,14 @@
 # Nicholas Mosier, January 2019
 
-CFLAGS=-c -Wall -pedantic -Werror
+CFLAGS=-c -Wall -pedantic
 
 .PHONY: all
-all: rop-lexer
+all: ropc
 
-rop-lexer: lex.yy.o rop-lexer-main.o
+ropc: ropc.o lex.yy.o rop.tab.o ast.o
+	gcc -o $@ $^
+
+rop-lexer: lex.yy.o rop-lexer-main.o 
 	gcc $(OFLAGS) -o $@ $^
 
 

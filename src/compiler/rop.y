@@ -1,10 +1,14 @@
 %{
+  #include <stdio.h>
   #include "ast.h"
-
+ 
   #define YYLTYPE int
   #define YYLLOC_DEFAULT(Cur, Rhs, N)		\
-    (Cur) = (N) ? (YYRHSLOC(Rhs, 1)) : YYRHSLOC(Rhs, 0));
-  
+    (Cur) = (N) ? YYRHSLOC(Rhs, 1) : YYRHSLOC(Rhs, 0);
+
+  void yyerror(const char *);
+  int yylex(void);
+  extern int lineno;
 %}
 
 	/* declarations */
@@ -13,15 +17,16 @@
   const char *err_msg;
   char *name;
   char *reg;
-  struct expression;
-  struct argument;
-  struct arguments;
-  struct instruction_prefix;
-  struct instruction;
-  struct instructions;
-  struct equate;
-  struct rule;
-  struct rules;
+  struct expression expression;
+  struct argument argument;
+  struct arguments arguments;
+  struct instruction_prefix instruction_prefix;
+  struct instruction instruction;
+  struct instructions instructions;
+  struct expression equate;
+  struct rule rule;
+  struct rules rules;
+  struct definition definition;
 }
 
 /* terminals */
@@ -79,7 +84,7 @@ expression:
 argument:
   IMM64 { $$.kind = ARGUMENT_IMM64; }
   | REG { $$.kind = ARGUMENT_REG; $$.name = $1; }
-  | MEMLEFT REG MEMRIGHT { $$.kind = ARGUMENT_MEM; $$.name = $2 }
+  | MEMLEFT REG MEMRIGHT { $$.kind = ARGUMENT_MEM; $$.name = $2; }
   | expression { $$.kind = ARGUMENT_EXPR; $$.expr = $1; }
 
 argument_list:
@@ -88,13 +93,13 @@ argument_list:
 
 optional_argument_list:
   /* empty */ { arguments_init(&$$); }
-  | argument_list { arguments_init(&$$); arguments_add(&$1, &$$); }
+  | argument_list { $$ = $1; }
 
 instruction_prefix:
   RET { $$.kind = RET; }
   | RESQ { $$.kind = RESQ; }
   | DQ { $$.kind = DQ; }
-  | IDENTIFIER { $$.kind = IDENTIFIER; $$.val = $1.name; }
+  | IDENTIFIER { $$.kind = IDENTIFIER; $$.val = $1; }
 
 instruction_line:
   INDENT instruction_prefix optional_argument_list NEWLINE { $$.prefix = $2; $$.args = $3; }
@@ -119,6 +124,10 @@ rule_body:
 rule:
 IDENTIFIER rule_body { $$ = $2; $$.id = $1; }
 
+
   
 %%
 	/* epilogue */
+void yyerror(const char *s) {
+  fprintf(stderr, "rop-parser: line %d %d: %s\n", lineno, yychar, s);
+}

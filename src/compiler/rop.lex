@@ -1,6 +1,13 @@
 %{
 #include <stdio.h>
-#include "tokens.h"
+  //#include "tokens.h"
+#include "ast.h"
+#include "rop.tab.h"
+
+  #define DEBUG 1
+#define LOG(msg) if (DEBUG) fprintf(stderr, "%d: %s\n", lineno, msg)
+
+  int lineno;
 %}
 
 	/* DEFINITIONS */
@@ -26,16 +33,17 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 ("//"|";")[[:print:]]*	{}
 					
 	/* multiline comment */
-<multiline>{MULTICOMM}"*/"       { BEGIN(INITIAL); }
-<multiline>{MULTICOMM}\n       { ++lineno; }
-"/*"	   	              { BEGIN(multiline); }
+<multiline>{MULTICOMM}"*/"     { BEGIN(INITIAL); LOG("comment begin"); }
+<multiline>{MULTICOMM}\n       { ++lineno; LOG("comment in");}
+"/*"	   	              { BEGIN(multiline); LOG("comment end"); }
 
 			      /* whitespace rules */
 			     /* indentation (after newline) */
 ^{WHITESPACE}+		{ return INDENT; }
 	/* consume rest of line */
 {WHITESPACE}+	   {}
-\n	{ ++lineno; return NEWLINE; }
+^[\n] { ++lineno; }
+[\n]+	{ ++lineno; return NEWLINE; }
 
 
 	/* regs */
