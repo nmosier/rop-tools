@@ -1,7 +1,8 @@
 %{
   #include <stdio.h>
   #include "ast.h"
- 
+
+  #define YYDEBUG 1
   #define YYLTYPE int
   #define YYLLOC_DEFAULT(Cur, Rhs, N)		\
     (Cur) = (N) ? YYRHSLOC(Rhs, 1) : YYRHSLOC(Rhs, 0);
@@ -23,10 +24,8 @@
   struct instruction_prefix instruction_prefix;
   struct instruction instruction;
   struct instructions instructions;
-  struct expression equate;
   struct rule rule;
   struct rules rules;
-  struct definition definition;
 }
 
 /* terminals */
@@ -48,8 +47,6 @@
 
 /* non-terminals */
 %type <expression> expression
-%type <expression> equate_body
-%type <definition> definition_body
 %type <instruction_prefix> instruction_prefix
 %type <instruction> instruction_line
 %type <instructions> instruction_lines
@@ -58,6 +55,8 @@
 %type <arguments> optional_argument_list
 %type <rule> rule_body
 %type <rule> rule
+%type <rule> equate_body
+%type <rule> definition_body
 %type <rules> optional_rule_list
 
 /* precedenance declarations */
@@ -109,22 +108,24 @@ instruction_lines:
   | instruction_lines instruction_line { instructions_add(&$2, &$$); }
 
 definition_body:
-  optional_argument_list DEF NEWLINE instruction_lines {
-    $$.args = $1;
-    $$.instrs = $4;
+  NEWLINE instruction_lines {
+    $$.kind = DEFINITION;
+    $$.definition = $2;
   }
 
 equate_body:
-  optional_argument_list DEF expression NEWLINE { $$ = $3; }
+  expression NEWLINE { $$.kind = EQUATE; $$.equate = $1; }
 
 rule_body:
-  definition_body { $$.kind = DEFINITION; $$.definition = $1; }
-  | equate_body { $$.kind = EQUATE; $$.equate = $1; }
+  definition_body { $$ = $1; }
+  | equate_body { $$ = $1; }
 
 rule:
-IDENTIFIER rule_body { $$ = $2; $$.id = $1; }
-
-
+  IDENTIFIER optional_argument_list DEF rule_body {
+    $$ = $4;
+    $$.id = $1;
+    $$.args = $2;
+  }
   
 %%
 	/* epilogue */

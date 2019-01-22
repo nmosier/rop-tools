@@ -58,16 +58,12 @@ struct instructions {
 void instructions_init(struct instructions *instrs);
 int instructions_add(struct instruction *instr, struct instructions *instrs);
 
-struct definition {
-  struct arguments args;
-  struct instructions instrs;
-};
-
 struct rule {
   enum rule_kind { DEFINITION, EQUATE } kind;
   char *id;
+  struct arguments args;
   union {
-    struct definition definition;
+    struct instructions definition;
     struct expression equate;
   };
 };

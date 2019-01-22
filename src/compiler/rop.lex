@@ -30,7 +30,8 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 	/* RULES */
 
 	/* single-line comment */
-("//"|";")[[:print:]]*	{}
+^("//"|";")[[:print:]]*\n	{ ++lineno; }
+("//"|";")[[:print:]]*\n	{ ++lineno; return NEWLINE; }
 					
 	/* multiline comment */
 <multiline>{MULTICOMM}"*/"\n  { ++lineno; BEGIN(INITIAL); LOG("comment end"); }
