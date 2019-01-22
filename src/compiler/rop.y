@@ -1,5 +1,10 @@
 %{
   #include "ast.h"
+
+  #define YYLTYPE int
+  #define YYLLOC_DEFAULT(Cur, Rhs, N)		\
+    (Cur) = (N) ? (YYRHSLOC(Rhs, 1)) : YYRHSLOC(Rhs, 0));
+  
 %}
 
 	/* declarations */
@@ -38,16 +43,17 @@
 
 /* non-terminals */
 %type <expression> expression
-%type <rules> optional_rule_list
-%type <definition> definition
-%type <equate> equate
-%type <rule> rule
+%type <expression> equate_body
+%type <definition> definition_body
 %type <instruction_prefix> instruction_prefix
 %type <instruction> instruction_line
 %type <instructions> instruction_lines
 %type <argument> argument
 %type <arguments> argument_list
 %type <arguments> optional_argument_list
+%type <rule> rule_body
+%type <rule> rule
+%type <rules> optional_rule_list
 
 /* precedenance declarations */
 %left PLUS
@@ -55,6 +61,12 @@
 
 %%
 	/* grammar rules */
+
+ /* start symbol */
+optional_rule_list:
+  /* empty */ { rules_init(&$$); @$ = 1; }
+  | optional_rule_list rule { $$ = $1; @$ = @1; }
+
 
 /* must be constant */
 expression:
@@ -72,38 +84,41 @@ argument:
 
 argument_list:
   argument { arguments_init(&($$)); arguments_add(&$1, &$$); }
-  | argument_list ARGSEP argument { arguments_add(&$1, &$$); }
+  | argument_list ARGSEP argument { arguments_add(&$3, &$$); }
 
 optional_argument_list:
-  /* empty */
-  | argument_list
+  /* empty */ { arguments_init(&$$); }
+  | argument_list { arguments_init(&$$); arguments_add(&$1, &$$); }
 
 instruction_prefix:
-  RET
-  | RESQ
-  | DQ
-  | IDENTIFIER
+  RET { $$.kind = RET; }
+  | RESQ { $$.kind = RESQ; }
+  | DQ { $$.kind = DQ; }
+  | IDENTIFIER { $$.kind = IDENTIFIER; $$.val = $1.name; }
 
 instruction_line:
-  INDENT instruction_prefix optional_argument_list NEWLINE
+  INDENT instruction_prefix optional_argument_list NEWLINE { $$.prefix = $2; $$.args = $3; }
 
 instruction_lines:
-  instruction_line
-  | instruction_lines instruction_line
+  instruction_line { instructions_init(&$$); instructions_add(&$1, &$$); }
+  | instruction_lines instruction_line { instructions_add(&$2, &$$); }
 
-definition:
-  IDENTIFIER optional_argument_list DEF instruction_lines
+definition_body:
+  optional_argument_list DEF NEWLINE instruction_lines {
+    $$.args = $1;
+    $$.instrs = $4;
+  }
 
-equate:
-  IDENTIFIER DEF expression NEWLINE
+equate_body:
+  optional_argument_list DEF expression NEWLINE { $$ = $3; }
+
+rule_body:
+  definition_body { $$.kind = DEFINITION; $$.definition = $1; }
+  | equate_body { $$.kind = EQUATE; $$.equate = $1; }
 
 rule:
-  definition
-  | equate
+IDENTIFIER rule_body { $$ = $2; $$.id = $1; }
 
-optional_rule_list:
-  /* empty */
-  | optional_rule_list rule
   
 %%
 	/* epilogue */

@@ -47,30 +47,34 @@ struct instruction {
 struct instructions {
   struct instruction *instrv;
   int instrc;
+  int maxc;
 };
+void instructions_init(struct instructions *instrs);
+int instructions_add(struct instruction *instr, struct instructions *instrs);
 
 struct definition {
-  char *id;
   struct arguments args;
   struct instructions instrs;
 };
 
-struct equate {
-  char *id;
-  struct expression expr;
-};
-
 struct rule {
-  enum rule { DEFINITION, EQUATE };
+  enum rule { DEFINITION, EQUATE } kind;
+  char *id;
   union {
-    struct definition;
-    struct equate;
+    struct definition definition;
+    struct expression equate
   };
 };
 
 struct rules {
   struct rule *rulev;
   int rulec;
-}  
-  
+  int maxc;
+};
+void rules_init(struct rules *rules);
+int rules_add(struct rule *rule, struct rules *rules);
+
+
+extern yylloc;
+
 #endif
