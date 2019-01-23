@@ -3,7 +3,7 @@
 CFLAGS=-c -g -Wall -pedantic
 
 .PHONY: all
-all: ropc rop-lexer
+all: ropc rop-lexer symtab.o
 
 ropc: ropc.o lex.yy.o rop.tab.o ast.o util.o
 	gcc -o $@ $^

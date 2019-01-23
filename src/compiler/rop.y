@@ -72,8 +72,8 @@
 
  /* start symbol */
 optional_rule_list:
-  /* empty */ { rules_init(&$$); rules_init(&rop_rules); @$ = 1; }
-  | optional_rule_list rule { rules_add(&$2, &$$); rop_rules = $$; @$ = @1; }
+  /* empty */ { rules_init(&$$); @$ = 1; }
+| optional_rule_list rule { rules_add(&$2, &$$); rules_add(&$2, &rop_rules); @$ = @1; }
 
 
 /* must be constant */
@@ -117,12 +117,12 @@ instruction_lines:
 
 definition_body:
   NEWLINE instruction_lines {
-    $$.kind = DEFINITION;
+    $$.kind = RULE_DEFINITION;
     $$.definition = $2;
   }
 
 equate_body:
-  expression NEWLINE { $$.kind = EQUATE; $$.equate = $1; }
+  expression NEWLINE { $$.kind = RULE_EQUATE; $$.equate = $1; }
 
 rule_body:
   definition_body { $$ = $1; }
