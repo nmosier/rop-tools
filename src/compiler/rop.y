@@ -1,15 +1,18 @@
 %{
   #include <stdio.h>
+  #include <stdint.h>
   #include "ast.h"
-
+  #include "util.h"
+  
   #define YYDEBUG 1
   #define YYLTYPE int
-  #define YYLLOC_DEFAULT(Cur, Rhs, N)		\
+  #define YYLLOC_DEFAULT(Cur, Rhs, N)			\
     (Cur) = (N) ? YYRHSLOC(Rhs, 1) : YYRHSLOC(Rhs, 0);
 
   void yyerror(const char *);
   int yylex(void);
   extern int lineno;
+  extern struct rules rop_rules;
 %}
 
 	/* declarations */
@@ -18,6 +21,7 @@
   const char *err_msg;
   char *name;
   char *reg;
+  int64_t num;
   struct expression expression;
   struct argument argument;
   struct arguments arguments;
@@ -39,7 +43,7 @@
 %token RESQ
 %token INDENT
 %token <reg> REG
-%token <expression> INT
+%token <num> INT
 %token IMM64
 %token <name> SYMBOL
 %token <name> IDENTIFIER
@@ -68,17 +72,21 @@
 
  /* start symbol */
 optional_rule_list:
-  /* empty */ { rules_init(&$$); @$ = 1; }
-  | optional_rule_list rule { $$ = $1; @$ = @1; }
+  /* empty */ { rules_init(&$$); rules_init(&rop_rules); @$ = 1; }
+  | optional_rule_list rule { rules_add(&$2, &$$); rop_rules = $$; @$ = @1; }
 
 
 /* must be constant */
 expression:
-  SYMBOL  { $$.kind = SYMBOL; $$.sym = $1; }
-  | IDENTIFIER { $$.kind = IDENTIFIER; $$.id = $1; }
-  | INT { $$ = $1; }
-  | expression PLUS expression { $$.kind = PLUS; $$.lhs = &($1); $$.rhs = &($3); }
-  | expression MINUS expression { $$.kind = MINUS; $$.lhs = &($1); $$.rhs = &($3); }
+  SYMBOL  { $$.kind = EXPRESSION_SYM; $$.sym = $1; }
+  | IDENTIFIER { $$.kind = EXPRESSION_ID; $$.id = $1; }
+  | INT { $$.kind = EXPRESSION_INT; $$.num = $1; }
+  | expression PLUS expression {
+    $$.kind = EXPRESSION_PLUS;
+    $$.lhs = memdup(&$1);
+    $$.rhs = memdup(&$3);
+  }
+  | expression MINUS expression { $$.kind = EXPRESSION_MINUS; $$.lhs = &($1); $$.rhs = &($3); }
 
 argument:
   IMM64 { $$.kind = ARGUMENT_IMM64; }
@@ -95,10 +103,10 @@ optional_argument_list:
   | argument_list { $$ = $1; }
 
 instruction_prefix:
-  RET { $$.kind = RET; }
-  | RESQ { $$.kind = RESQ; }
-  | DQ { $$.kind = DQ; }
-  | IDENTIFIER { $$.kind = IDENTIFIER; $$.val = $1; }
+  RET { $$.kind = PREFIX_RET; }
+  | RESQ { $$.kind = PREFIX_RESQ; }
+| DQ { $$.kind = PREFIX_DQ; }
+  | IDENTIFIER { $$.kind = PREFIX_ID; $$.val = $1; }
 
 instruction_line:
   INDENT instruction_prefix optional_argument_list NEWLINE { $$.prefix = $2; $$.args = $3; }

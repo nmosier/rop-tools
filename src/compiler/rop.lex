@@ -1,13 +1,14 @@
 %{
 #include <stdio.h>
-  //#include "tokens.h"
+
 #include "ast.h"
 #include "rop.tab.h"
 
-  #define LEXER_DEBUG 0
+#define LEXER_DEBUG 0
 #define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%d: %s\n", lineno, msg)
 
   int lineno;
+  //extern YYSTYPE yylval;
 %}
 
 	/* DEFINITIONS */
@@ -17,9 +18,9 @@ WHITESPACE 	       [ \t]
 		       /* (already consumed) */
 		       /*MULTICOMM	       [^/*\n]**/
 MULTICOMM	       ([^*\n]("*"+[^/\n])?)*"*"*
-NUMBER_DEC	       [[:digit:]]+
-NUMBER_HEX	       0x[[:xdigit:]]+
-NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
+NUMBER_DEC	       "-"?[[:digit:]]+
+NUMBER_HEX	       "-"?0x[[:xdigit:]]+
+  //NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 
         /* conditions */
 %x multiline
@@ -49,7 +50,7 @@ NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
 
 
 	/* regs */
-"r"([abcd]"x"|[sd]"i"|[0-9]+|"bp") { return REG; }
+"r"([abcd]"x"|[sd]"i"|[0-9]+|"bp") { yylval.reg = strdup(yytext); return REG; }
 
 	/* single-character tokens */
 "["			      { return MEMLEFT; }
@@ -64,13 +65,16 @@ dq			      { return DQ; }
 resq			      { return RESQ; }
 			      
 	/* numbers */
-{NUMBER}		      { return INT; }
+{NUMBER_DEC}		      { yylval.num = strtoll(yytext, NULL, 10);
+                                return INT; }
+{NUMBER_HEX}                  { yylval.num = strtoll(yytext, NULL, 16);
+                                 return INT; }
 
 
 	/* identifiers */
-[A-Z_][A-Z0-9_]*		      { return IDENTIFIER; }
+[A-Z_][A-Z0-9_]*		      { yylval.name = strdup(yytext); return IDENTIFIER; }
         /* symbols */
-"<"[[:graph:]]">"		      { return SYMBOL; }
+"<"[[:graph:]]">"		      { yylval.name = strdup(yytext); return SYMBOL; }
 
 .			      { fprintf(stderr, "flex: illegal character %c \\%03o\n",
 			        *yytext, *yytext); return ERROR; }

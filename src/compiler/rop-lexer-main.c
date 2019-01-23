@@ -7,6 +7,7 @@
 #include "rop.tab.h"
 
 int lineno = 1; // used by lexer
+YYSTYPE yylval;
 
 extern int yylex();
 extern char *yytext;

@@ -3,12 +3,16 @@
 
 
 #include <stdint.h>
-//#include "token.h"
 
 /* limits */
 
 struct expression {
-  int kind; /* in case of binop, kind = binop token */
+  enum expression_kind {EXPRESSION_SYM,
+			EXPRESSION_ID,
+			EXPRESSION_INT,
+			EXPRESSION_PLUS,
+		        EXPRESSION_MINUS}
+    kind; /* in case of binop, kind = binop token */
   union {
     struct {
       struct expression *lhs;
@@ -19,6 +23,7 @@ struct expression {
     int64_t num;
   };
 };
+const char *expression_kind2str(enum expression_kind kind);
 
 struct argument {
   enum argument_kind {ARGUMENT_IMM64,
@@ -41,7 +46,7 @@ void arguments_init(struct arguments *args);
 int arguments_add(struct argument *arg, struct arguments *args);
 
 struct instruction_prefix {
-  int kind;
+  enum instruction_prefix_kind { PREFIX_RET, PREFIX_RESQ, PREFIX_DQ, PREFIX_ID } kind;
   char *val;
 };
 

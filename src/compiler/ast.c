@@ -16,13 +16,12 @@ int arguments_add(struct argument *arg, struct arguments *args) {
   if (args->argc == args->maxc) {
     /* resize */
     struct argument *argv;
-    if ((argv = realloc(args->argv,
-			MAX(args->maxc*2, ARR_MINLEN) * sizeof(*args->argv)))
-	== NULL) {
+    int newc = MAX(args->maxc*2, ARR_MINLEN);
+    if ((argv = realloc(args->argv, newc * sizeof(*args->argv))) == NULL) {
       return -1;
     }
     args->argv = argv;
-    args->maxc *= 2;
+    args->maxc = newc;
   }
   memcpy(&args->argv[args->argc++], arg, sizeof(*arg));
   return 0;
@@ -38,13 +37,12 @@ int instructions_add(struct instruction *instr, struct instructions *instrs) {
   if (instrs->instrc == instrs->maxc) {
     /* resize */
     struct instruction *instrv;
-    if ((instrv = realloc(instrs->instrv,
-			  MAX(instrs->maxc*2, ARR_MINLEN)*sizeof(*instrv)))
-	== NULL) {
+    int newc = MAX(instrs->maxc*2, ARR_MINLEN);
+    if ((instrv = realloc(instrs->instrv, newc*sizeof(*instrv))) == NULL) {
       return -1;
     }
     instrs->instrv = instrv;
-    instrs->maxc *= 2;
+    instrs->maxc = newc;
   }
   memcpy(&instrs->instrv[instrs->instrc++], instr, sizeof(*instr));
   return 0;
@@ -58,14 +56,26 @@ void rules_init(struct rules *rules) {
 int rules_add(struct rule *rule, struct rules *rules) {
   if (rules->rulec == rules->maxc) {
     struct rule *rulev;
-    if ((rulev = realloc(rules->rulev,
-			 MAX(rules->maxc*2, ARR_MINLEN)*sizeof(*rulev)))
-	== NULL) {
+    int newc = MAX(rules->maxc*2, ARR_MINLEN);
+    if ((rulev = realloc(rules->rulev, newc*sizeof(*rulev))) == NULL) {
       return -1;
     }
     rules->rulev = rulev;
-    rules->maxc *= 2;
+    rules->maxc = newc;
   }
   memcpy(&rules->rulev[rules->rulec++], rule, sizeof(*rule));
   return 0;
+}
+
+
+
+const char *expression_kind2str(enum expression_kind kind) {
+  switch (kind) {
+  case EXPRESSION_SYM: return "EXPRESSION_SYM";
+  case EXPRESSION_ID: return "EXPRESSION_ID";
+  case EXPRESSION_INT: return "EXPRESSION_INT";
+  case EXPRESSION_PLUS: return "EXPRESSION_PLUS";
+  case EXPRESSION_MINUS: return "EXPRESSION_MINUS";
+  default: return NULL;
+  }
 }
