@@ -1,11 +1,12 @@
 # Nicholas Mosier, January 2019
 
 CFLAGS=-c -g -Wall -pedantic
+ROPC_OBJS=ropc.o lex.yy.o rop.tab.o ast.o util.o symtab.o
 
 .PHONY: all
 all: ropc rop-lexer symtab.o
 
-ropc: ropc.o lex.yy.o rop.tab.o ast.o util.o
+ropc: $(ROPC_OBJS)
 	gcc -o $@ $^
 
 rop-lexer: lex.yy.o rop-lexer-main.o

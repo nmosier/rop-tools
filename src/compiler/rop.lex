@@ -74,7 +74,7 @@ resq			      { return RESQ; }
 	/* identifiers */
 [A-Z_][A-Z0-9_]*		      { yylval.name = strdup(yytext); return IDENTIFIER; }
         /* symbols */
-"<"[[:graph:]]">"		      { yylval.name = strdup(yytext); return SYMBOL; }
+"<"[[:graph:]]+">"		      { yylval.name = strdup(yytext); return SYMBOL; }
 
 .			      { fprintf(stderr, "flex: illegal character %c \\%03o\n",
 			        *yytext, *yytext); return ERROR; }
