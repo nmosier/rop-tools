@@ -4,7 +4,8 @@
 #include "ast.h"
 #include "rop.tab.h"
 #include "symtab.h"
-
+#include "assert.h"
+  
 #define LEXER_DEBUG 0
 #define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%d: %s\n", lineno, msg)
 
@@ -75,13 +76,19 @@ resq			      { return RESQ; }
 	/* identifiers */
 [A-Z_][A-Z0-9_]*    {
   /* insert into symbol table */
-  symtab_put_bare(yytext, &rop_symtab);
+  struct symbol *sym = symtab_put_bare(yytext, &rop_symtab);
+  assert (sym);
+  yylval.symbol = sym;
   // yylval.name = strdup(yytext);
   return IDENTIFIER;
 }
         /* symbols */
 "<"[[:graph:]]+">"	{
-  yylval.name = strdup(yytext);
+  struct symbol *sym = symtab_put_bare(yytext, &rop_symtab);
+  assert (sym);
+  sym->kind = SYMBOL_EXTERN; // we already know this b/c of the angle brackets
+  yylval.symbol = sym;
+  //yylval.name = strdup(yytext);
   return SYMBOL;
 }
 

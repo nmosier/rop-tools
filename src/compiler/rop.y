@@ -3,6 +3,7 @@
   #include <stdint.h>
   #include "ast.h"
   #include "util.h"
+  #include "symtab.h"
   
   #define YYDEBUG 1
   #define YYLTYPE int
@@ -19,7 +20,7 @@
 /* union declaration */
 %union {
   const char *err_msg;
-  char *name;
+  struct symbol *symbol;
   char *reg;
   int64_t num;
   struct expression expression;
@@ -45,8 +46,8 @@
 %token <reg> REG
 %token <num> INT
 %token IMM64
-%token <name> SYMBOL
-%token <name> IDENTIFIER
+%token <symbol> SYMBOL
+%token <symbol> IDENTIFIER
 %token NEWLINE
 
 /* non-terminals */
@@ -79,7 +80,7 @@ optional_rule_list:
 /* must be constant */
 expression:
   SYMBOL  { $$.kind = EXPRESSION_SYM; $$.sym = $1; }
-  | IDENTIFIER { $$.kind = EXPRESSION_ID; $$.id = $1; }
+  | IDENTIFIER { $$.kind = EXPRESSION_ID; $$.sym = $1; }
   | INT { $$.kind = EXPRESSION_INT; $$.num = $1; }
   | expression PLUS expression {
     $$.kind = EXPRESSION_PLUS;
@@ -105,11 +106,13 @@ optional_argument_list:
 instruction_prefix:
   RET { $$.kind = PREFIX_RET; }
   | RESQ { $$.kind = PREFIX_RESQ; }
-| DQ { $$.kind = PREFIX_DQ; }
-  | IDENTIFIER { $$.kind = PREFIX_ID; $$.val = $1; }
+  | DQ { $$.kind = PREFIX_DQ; }
+  | IDENTIFIER { $$.kind = PREFIX_ID; $$.val = $1; $$.val->kind = SYMBOL_DEFINITION; }
 
 instruction_line:
-  INDENT instruction_prefix optional_argument_list NEWLINE { $$.prefix = $2; $$.args = $3; }
+  INDENT instruction_prefix optional_argument_list NEWLINE {
+    $$.prefix = $2; $$.args = $3;
+  }
 
 instruction_lines:
   instruction_line { instructions_init(&$$); instructions_add(&$1, &$$); }
@@ -131,7 +134,8 @@ rule_body:
 rule:
   IDENTIFIER optional_argument_list DEF rule_body {
     $$ = $4;
-    $$.id = $1;
+    $$.sym = $1;
+    $1->kind = rulek2symk($4.kind);
     $$.args = $2;
   }
   

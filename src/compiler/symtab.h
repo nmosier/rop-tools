@@ -39,8 +39,8 @@ struct symtab {
 
 int symtab_init(struct symtab *tab);
 int symbol_hash(const struct symbol *sym);
-int symtab_put_bare(const char *name, struct symtab *tab);
-int symtab_put(struct symbol *sym, struct symtab *tab);
+struct symbol *symtab_put(struct symbol *sym, struct symtab *tab);
+struct symbol *symtab_put_bare(const char *name, struct symtab *tab);
 int symbol_cmp(const struct symbol *sym1, const struct symbol *sym2);
 struct syment **symtab_entref(struct symbol *sym, struct symtab *tab);
 enum symbol_kind rulek2symk(enum rule_kind rulek);

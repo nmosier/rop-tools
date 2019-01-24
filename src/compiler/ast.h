@@ -18,8 +18,7 @@ struct expression {
       struct expression *lhs;
       struct expression *rhs;
     };
-    char *sym;
-    char *id;
+    struct symbol *sym;
     int64_t num;
   };
 };
@@ -32,7 +31,7 @@ struct argument {
 		      ARGUMENT_EXPR
   } kind;
   union {
-    char *name; // optional
+    char *name;
     struct expression expr;
   };
 };
@@ -47,7 +46,7 @@ int arguments_add(struct argument *arg, struct arguments *args);
 
 struct instruction_prefix {
   enum instruction_prefix_kind { PREFIX_RET, PREFIX_RESQ, PREFIX_DQ, PREFIX_ID } kind;
-  char *val;
+  struct symbol *val;
 };
 
 struct instruction {
@@ -66,7 +65,7 @@ int instructions_add(struct instruction *instr, struct instructions *instrs);
 enum rule_kind { RULE_DEFINITION, RULE_EQUATE };
 struct rule {
   enum rule_kind kind;
-  char *id;
+  struct symbol *sym;
   struct arguments args;
   union {
     struct instructions definition;

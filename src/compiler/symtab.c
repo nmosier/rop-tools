@@ -58,31 +58,31 @@ struct syment **symtab_entref(struct symbol *sym, struct symtab *tab) {
   return ref;
 }
 
-int symtab_put(struct symbol *sym, struct symtab *tab) {
+struct symbol *symtab_put(struct symbol *sym, struct symtab *tab) {
   struct syment **ref;
   struct syment *ent;
   
   ref = symtab_entref(sym, tab);
   if (*ref) {
-    return 0; // already exists in table
+    return &(*ref)->sym; // already exists in table
   }
 
   /* construct & insert new entry at _ref_ */
   if ((ent = malloc(sizeof(*ent))) == NULL) {
-    return -1; // error
+    return NULL; // error
   }
   memcpy(&ent->sym, sym, sizeof(*sym));
   ent->next = NULL;
   *ref = ent;
 
-  return 1; // successfully inserted
+  return &ent->sym; // successfully inserted
 }
 
-int symtab_put_bare(const char *name, struct symtab *tab) {
+struct symbol *symtab_put_bare(const char *name, struct symtab *tab) {
   struct symbol sym;
 
   if ((sym.name = strdup(name)) == NULL) {
-    return -1;
+    return NULL;
   }
   sym.kind = SYMBOL_UNKNOWN;
   
@@ -106,7 +106,7 @@ enum symbol_kind rulek2symk(enum rule_kind rulek) {
 const char *symk2str(enum symbol_kind symk) {
   switch (symk) {
   case SYMBOL_DEFINITION: return "DEF";
-  case SYMBOL_EQUATE: return "EQE";
+  case SYMBOL_EQUATE: return "EQU";
   case SYMBOL_EXTERN: return "EXT";
   case SYMBOL_UNKNOWN: return "UNK";
   default: return NULL;
