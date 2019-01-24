@@ -9,7 +9,7 @@ all: ropc rop-lexer symtab.o
 ropc: $(ROPC_OBJS)
 	gcc -o $@ $^
 
-rop-lexer: lex.yy.o rop-lexer-main.o
+rop-lexer: lex.yy.o rop-lexer-main.o symtab.o
 	gcc $(OFLAGS) -o $@ $^
 
 

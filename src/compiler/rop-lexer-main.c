@@ -5,9 +5,12 @@
 //#include "tokens.h"
 #include "ast.h"
 #include "rop.tab.h"
+#include "symtab.h"
+
 
 int lineno = 1; // used by lexer
 YYSTYPE yylval;
+struct symtab rop_symtab;
 
 extern int yylex();
 extern char *yytext;

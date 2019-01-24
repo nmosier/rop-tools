@@ -3,12 +3,13 @@
 
 #include "ast.h"
 #include "rop.tab.h"
+#include "symtab.h"
 
 #define LEXER_DEBUG 0
 #define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%d: %s\n", lineno, msg)
 
   int lineno;
-  //extern YYSTYPE yylval;
+  extern struct symtab rop_symtab;
 %}
 
 	/* DEFINITIONS */
@@ -72,9 +73,17 @@ resq			      { return RESQ; }
 
 
 	/* identifiers */
-[A-Z_][A-Z0-9_]*		      { yylval.name = strdup(yytext); return IDENTIFIER; }
+[A-Z_][A-Z0-9_]*    {
+  /* insert into symbol table */
+  symtab_put_bare(yytext, &rop_symtab);
+  // yylval.name = strdup(yytext);
+  return IDENTIFIER;
+}
         /* symbols */
-"<"[[:graph:]]+">"		      { yylval.name = strdup(yytext); return SYMBOL; }
+"<"[[:graph:]]+">"	{
+  yylval.name = strdup(yytext);
+  return SYMBOL;
+}
 
 .			      { fprintf(stderr, "flex: illegal character %c \\%03o\n",
 			        *yytext, *yytext); return ERROR; }
