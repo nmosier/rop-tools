@@ -63,6 +63,7 @@ void instructions_init(struct instructions *instrs);
 int instructions_add(struct instruction *instr, struct instructions *instrs);
 
 enum rule_kind { RULE_DEFINITION, RULE_EQUATE };
+
 struct rule {
   enum rule_kind kind;
   struct symbol *sym;
@@ -80,5 +81,13 @@ struct rules {
 };
 void rules_init(struct rules *rules);
 int rules_add(struct rule *rule, struct rules *rules);
+
+/* comparison functions */
+int rule_cmp(const struct rule *r1, const struct rule *r2);
+int arguments_cmp(const struct arguments *a1, const struct arguments *a2);
+int argument_cmp(const struct argument *a1, const struct argument *a2);
+
+/* `has' functions */
+int rules_has(struct rule *rule, struct rules *rules);
 
 #endif
