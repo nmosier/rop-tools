@@ -31,7 +31,7 @@ struct argument {
 		      ARGUMENT_EXPR
   } kind;
   union {
-    char *name;
+    struct symbol *reg;
     struct expression expr;
   };
 };

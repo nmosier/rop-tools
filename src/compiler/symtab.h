@@ -14,6 +14,7 @@ enum symbol_kind {
   SYMBOL_DEFINITION,
   SYMBOL_EQUATE,
   SYMBOL_EXTERN,
+  SYMBOL_REG,
   SYMBOL_UNKNOWN,
 };
 enum symbol_kind rulek2symk(enum rule_kind rulek);

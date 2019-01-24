@@ -108,6 +108,7 @@ const char *symk2str(enum symbol_kind symk) {
   case SYMBOL_DEFINITION: return "DEF";
   case SYMBOL_EQUATE: return "EQU";
   case SYMBOL_EXTERN: return "EXT";
+  case SYMBOL_REG: return "REG";
   case SYMBOL_UNKNOWN: return "UNK";
   default: return NULL;
   }

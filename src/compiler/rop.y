@@ -21,7 +21,6 @@
 %union {
   const char *err_msg;
   struct symbol *symbol;
-  char *reg;
   int64_t num;
   struct expression expression;
   struct argument argument;
@@ -43,7 +42,7 @@
 %token DQ
 %token RESQ
 %token INDENT
-%token <reg> REG
+%token <symbol> REG
 %token <num> INT
 %token IMM64
 %token <symbol> SYMBOL
@@ -91,8 +90,8 @@ expression:
 
 argument:
   IMM64 { $$.kind = ARGUMENT_IMM64; }
-  | REG { $$.kind = ARGUMENT_REG; $$.name = $1; }
-  | MEMLEFT REG MEMRIGHT { $$.kind = ARGUMENT_MEM; $$.name = $2; }
+  | REG { $$.kind = ARGUMENT_REG; $$.reg = $1; }
+  | MEMLEFT REG MEMRIGHT { $$.kind = ARGUMENT_MEM; $$.reg = $2; }
   | expression { $$.kind = ARGUMENT_EXPR; $$.expr = $1; }
 
 argument_list:
