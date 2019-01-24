@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "rop.tab.h"
 #include "symtab.h"
+#include "semant.h"
 
 extern FILE *yyin;
 
@@ -74,6 +75,12 @@ int main(int argc, char *argv[]) {
 
   /* debugging: print out symtab */
   symtab_print(&rop_symtab, stderr);
+
+  /* semantic analysis */
+  if (semant_build_rules(&rop_rules, &rop_symtab) < 0) {
+    fprintf(stderr, "%s: semantic analyzer detected errors.\n", argv[0]);
+    goto cleanup;
+  }
   
  cleanup:
   for (int i = 0; i < infiles_cnt; ++i) {

@@ -24,9 +24,11 @@ struct symbol {
   char *name;
   enum symbol_kind kind;
   union {
-    struct rule *rule_ptr;
+    struct rules defs; // overloaded rules
+    struct rule *equ;
   };
 };
+void symbol_init(struct symbol *sym);
 
 struct syment {
   struct symbol sym;

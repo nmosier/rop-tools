@@ -22,6 +22,12 @@ int symtab_init(struct symtab *tab) {
   return 0;
 }
 
+void symbol_init(struct symbol *sym) {
+  memset(sym, 0, sizeof(*sym));
+  sym->name = NULL;
+  sym->kind = SYMBOL_UNKNOWN;
+}
+
 int symbol_hash(const struct symbol *sym) {
   int acc;
   const char *it;
@@ -81,6 +87,7 @@ struct symbol *symtab_put(struct symbol *sym, struct symtab *tab) {
 struct symbol *symtab_put_bare(const char *name, struct symtab *tab) {
   struct symbol sym;
 
+  symbol_init(&sym);
   if ((sym.name = strdup(name)) == NULL) {
     return NULL;
   }

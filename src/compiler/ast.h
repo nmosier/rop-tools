@@ -81,7 +81,4 @@ struct rules {
 void rules_init(struct rules *rules);
 int rules_add(struct rule *rule, struct rules *rules);
 
-
-//extern int yylloc;
-
 #endif
