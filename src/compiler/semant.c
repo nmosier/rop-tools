@@ -109,7 +109,97 @@ int semant_pass1(struct program *prog, struct symtab *tab) {
 }
 
 
+int semant_link_instrs(struct instructions *instrs, struct symtab *tab) {
+  struct instruction *instr_it, *instr_end;
+  int valid;
+
+  /* link instructions in vector */
+  valid = 1;
+  for (instr_it = instrs->instrv, instr_end = instr_it + instrs->instrc;
+       instr_it < instr_end; ++instr_it) {
+    
+    /* determine if instruction needs linking */
+    if (instr_it->kind != INSTRUCTION_RULE) { continue; }
+
+    /* get instruction prefix symbol */
+    struct symbol *sym = instr_it->sym;
+
+    /* get list of rule definition candidates from symbol */
+    struct rules *defs = &sym->defs;
+
+    /* iterate through definition candidates to find match */
+    struct rule *def_it, *def_end;
+    for (def_it = defs->rulev, def_end = def_it + defs->rulec;
+	 def_it < def_end && instruction_match_rule(instr_it, def_it) == 0;
+	 ++def_it)
+      {}
+
+    if (def_it == def_end) {
+      /* didn't find a matching definition for instruction instantiation */
+      fprintf(stderr, "semant: found no matching definition for instruction %s.\n",
+	      sym->name); // should add line numbers later...
+      valid = 0;
+      continue;
+    }
+
+    /* link instruction to found definition */
+    instr_it->ref = def_it;
+  }
+
+  return valid ? 0 : -1;
+}
+
 /* links instructions to rules that the reference  */
 int semant_pass2(struct program *prog, struct symtab *tab) {
-  return -1; // to be implemented 
+  struct rule *rule_it, *rule_end;
+  struct block *block_it, *block_end;
+  int valid;
+
+  valid = 1;
+
+  /* link rules' instructions */
+  for (rule_it = prog->rules.rulev, rule_end = rule_it + prog->rules.rulec;
+       rule_it < rule_end; ++rule_it) {
+    switch (rule_it->kind) {
+    case RULE_DEFINITION:
+      if (semant_link_instrs(&rule_it->definition, tab) < 0) {
+	valid = 0;
+      }
+      break;
+    case RULE_EQUATE:
+      break; // equates have no instructions
+    default:
+      fprintf(stderr, "semant: internal error: rule is of incorrect type.\n");
+      valid = 0;
+      break;
+    }
+  }
+
+  /* link blocks' instructions */
+  for (block_it = prog->blocks.blockv, block_end = block_it + prog->blocks.blockc;
+       block_it < block_end; ++block_it) {
+    if (semant_link_instrs(&block_it->instrs, tab) < 0) {
+      valid = 0;
+    }
+  }
+
+  if (!valid) {
+    fprintf(stderr, "semant: pass 2 failed.\n");
+  }
+
+  return valid ? 0 : -1;
+}
+
+
+int semant(struct program *prog, struct symtab *tab) {
+  int valid;
+
+  valid = 1;
+  if (semant_pass1(prog, tab) < 0) {
+    valid = 0;
+  }
+  if (semant_pass2(prog, tab) < 0) {
+    valid = 0;
+  }
+  return valid ? 0 : -1;
 }

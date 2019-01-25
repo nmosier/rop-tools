@@ -44,14 +44,11 @@ struct arguments {
 void arguments_init(struct arguments *args);
 int arguments_add(struct argument *arg, struct arguments *args);
 
-struct instruction_prefix {
-  enum instruction_prefix_kind { PREFIX_RET, PREFIX_RESQ, PREFIX_DQ, PREFIX_ID } kind;
-  struct symbol *val;
-};
-
 struct instruction {
-  struct instruction_prefix prefix;
+  enum instruction_kind { INSTRUCTION_RET, INSTRUCTION_RESQ,
+			  INSTRUCTION_DQ, INSTRUCTION_RULE } kind;
   struct arguments args;
+  struct symbol *sym;
   struct rule *ref; // rule that it is a reference to
 };
 
@@ -110,5 +107,10 @@ int argument_cmp(const struct argument *a1, const struct argument *a2);
 
 /* `has' functions */
 int rules_has(struct rule *rule, struct rules *rules);
+
+/* `match' functions */
+int argument_match(const struct argument *ref, const struct argument *def);
+int arguments_match(const struct arguments *ref, const struct arguments *def);
+int instruction_match_rule(const struct instruction *instr, const struct rule *rule);
 
 #endif

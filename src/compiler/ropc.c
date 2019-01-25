@@ -9,6 +9,7 @@
 
 extern FILE *yyin;
 extern int yydebug;
+extern int lineno;
 
 //struct rules rop_rules;
 struct program rop_program;
@@ -96,6 +97,7 @@ int main(int argc, char *argv[]) {
   /* parse files */
   for (int i = 0; i < infiles_cnt; ++i) {
     yyin = infiles[i];
+    lineno = 1;
     yyparse();
   }
 
@@ -103,8 +105,14 @@ int main(int argc, char *argv[]) {
   symtab_print(&rop_symtab, stderr);
 
   /* semantic analysis */
+  /*
   if (semant_pass1(&rop_program, &rop_symtab) < 0) {
     fprintf(stderr, "%s: semantic analyzer detected errors.\n", argv[0]);
+    goto cleanup;
+  }
+  */
+  if (semant(&rop_program, &rop_symtab) < 0) {
+    fprintf(stderr, "%s: semantic analyzer detected erorrs.\n", argv[0]);
     goto cleanup;
   }
   
@@ -121,3 +129,4 @@ int main(int argc, char *argv[]) {
   exit(exit_status);
 
 }
+

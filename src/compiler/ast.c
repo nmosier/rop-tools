@@ -179,3 +179,65 @@ void program_init(struct program *prog) {
   rules_init(&prog->rules);
   blocks_init(&prog->blocks);
 }
+
+/* assumes that instruction is of type `INSTRUCTION_RULE' */
+int instruction_match_rule(const struct instruction *instr, const struct rule *rule) {
+  /* match symbols */
+  if (symbol_cmp(instr->sym, rule->sym) != 0) {
+    /* symbols don't match */
+    return 0;
+  }
+
+  /* match arguments */
+  if (arguments_match(&instr->args, &rule->args) == 0) {
+    return 0;
+  }
+
+  /* instruction matches rule */
+  return 1;
+}
+
+int arguments_match(const struct arguments *ref, const struct arguments *def) {
+  const struct argument *ref_it, *def_it;
+  int argi, argc;
+
+  /* check if argument counts match */
+  if (ref->argc != def->argc) {
+    return 0;
+  }
+
+  /* iterate through arguments in lockstep */
+  for (argi = 0, argc = ref->argc, ref_it = ref->argv, def_it = def->argv;
+       argi < argc; ++argi, ++ref_it, ++def_it) {
+    if (argument_match(ref_it, def_it) == 0) {
+      /* argument pair does not match */
+      return 0;
+    }
+  }
+
+  /* arguments match */
+  return 1;
+}
+
+int argument_match(const struct argument *ref, const struct argument *def) {
+  enum argument_kind defk, refk;
+
+  defk = def->kind;
+  refk = ref->kind;
+
+  switch (defk) {
+  case ARGUMENT_IMM64:
+    switch (refk) {
+    case ARGUMENT_EXPR: // always resolves to type INT
+    case ARGUMENT_IMM64: return 1;
+    default: return 0;
+    }
+  case ARGUMENT_REG:
+  case ARGUMENT_MEM:
+    if (defk != refk) { return 0; }
+    return symbol_cmp(ref->reg, def->reg);
+  case ARGUMENT_EXPR:
+  default:
+    return 0; // only here if internal error or malformed rule
+  }
+}

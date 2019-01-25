@@ -25,7 +25,6 @@
   struct expression expression;
   struct argument argument;
   struct arguments arguments;
-  struct instruction_prefix instruction_prefix;
   struct instruction instruction;
   struct instructions instructions;
   struct rule rule;
@@ -57,7 +56,7 @@
 /* non-terminals */
 %type <expression> expression
 
-%type <instruction_prefix> instruction_prefix
+%type <instruction> instruction_prefix
 %type <instruction> instruction_line
 %type <instructions> instruction_lines
 
@@ -115,14 +114,18 @@ optional_argument_list:
   | argument_list { $$ = $1; }
 
 instruction_prefix:
-  RET { $$.kind = PREFIX_RET; }
-  | RESQ { $$.kind = PREFIX_RESQ; }
-  | DQ { $$.kind = PREFIX_DQ; }
-  | IDENTIFIER { $$.kind = PREFIX_ID; $$.val = $1; $$.val->kind = SYMBOL_DEFINITION; }
+  RET { $$.kind = INSTRUCTION_RET; }
+  | RESQ { $$.kind = INSTRUCTION_RESQ; }
+  | DQ { $$.kind = INSTRUCTION_DQ; }
+  | IDENTIFIER {
+      $$.kind = INSTRUCTION_RULE;
+      $$.sym = $1;
+      $$.sym->kind = SYMBOL_DEFINITION;
+    }
 
 instruction_line:
   INDENT instruction_prefix optional_argument_list NEWLINE {
-    $$.prefix = $2; $$.args = $3;
+    $$ = $2; $$.args = $3;
   }
 
 instruction_lines:
