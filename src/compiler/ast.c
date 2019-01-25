@@ -150,3 +150,32 @@ int argument_cmp(const struct argument *a1, const struct argument *a2) {
     assert(0);
   }
 }
+
+int block_cmp(struct block *blk1, struct block *blk2) {
+  return symbol_cmp(blk1->sym, blk2->sym);
+}
+
+
+void blocks_init(struct blocks *blocks) {
+  memset(blocks, 0, sizeof(*blocks));
+}
+
+int blocks_add(struct block *block, struct blocks *blocks) {
+  if (blocks->blockc == blocks->maxc) {
+    /* resize */
+    struct block *blockv;
+    int newc = MAX(ARR_MINLEN, blocks->blockc * 2);
+    if ((blockv = realloc(blocks->blockv, newc * sizeof(*blockv))) == NULL) {
+      return -1;
+    }
+    blocks->blockv = blockv;
+    blocks->maxc = newc;
+  }
+  memcpy(&blocks->blockv[blocks->blockc++], block, sizeof(*block));
+  return 0;
+}
+
+void program_init(struct program *prog) {
+  rules_init(&prog->rules);
+  blocks_init(&prog->blocks);
+}

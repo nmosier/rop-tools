@@ -9,7 +9,8 @@
 
 extern FILE *yyin;
 
-struct rules rop_rules;
+//struct rules rop_rules;
+struct program rop_program;
 struct symtab rop_symtab;
 
 int main(int argc, char *argv[]) {
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* initialize */
-  rules_init(&rop_rules);
+  program_init(&rop_program);
   symtab_init(&rop_symtab);
 
   /* parse files */
@@ -77,7 +78,7 @@ int main(int argc, char *argv[]) {
   symtab_print(&rop_symtab, stderr);
 
   /* semantic analysis */
-  if (semant_build_rules(&rop_rules, &rop_symtab) < 0) {
+  if (semant_check(&rop_program, &rop_symtab) < 0) {
     fprintf(stderr, "%s: semantic analyzer detected errors.\n", argv[0]);
     goto cleanup;
   }

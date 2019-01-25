@@ -82,8 +82,28 @@ struct rules {
 void rules_init(struct rules *rules);
 int rules_add(struct rule *rule, struct rules *rules);
 
+struct block {
+  struct symbol *sym;
+  struct instructions instrs;
+};
+
+struct blocks {
+  struct block *blockv;
+  int blockc;
+  int maxc;
+};
+void blocks_init(struct blocks *blocks);
+int blocks_add(struct block *block, struct blocks *blocks);
+
+struct program {
+  struct rules rules;
+  struct blocks blocks;
+};
+void program_init(struct program *prog);
+
 /* comparison functions */
 int rule_cmp(const struct rule *r1, const struct rule *r2);
+int block_cmp(struct block *blk1, struct block *blk2);
 int arguments_cmp(const struct arguments *a1, const struct arguments *a2);
 int argument_cmp(const struct argument *a1, const struct argument *a2);
 

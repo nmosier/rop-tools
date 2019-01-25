@@ -65,11 +65,16 @@ NUMBER_HEX	       "-"?0x[[:xdigit:]]+
 "+"			      { return PLUS; }
 "-"			      { return MINUS; }
 ":="			      { return DEF; }
+"#"+\n                        { return NEWSEG; }
+":"                           { return LABEL; }
+
+         /* keywords */
 ret			      { return RET; }
 imm64			      { return IMM64; }
 dq			      { return DQ; }
 resq			      { return RESQ; }
-			      
+
+
 	/* numbers */
 {NUMBER_DEC}		      { yylval.num = strtoll(yytext, NULL, 10);
                                 return INT; }

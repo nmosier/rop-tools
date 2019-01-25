@@ -9,7 +9,7 @@
 #include "ast.h"
 #include "symtab.h"
 
-int semant_build_rules(struct rules *rules, struct symtab *tab) {
+int semant_check_rules(struct rules *rules, struct symtab *tab) {
   struct rule *rule_it, *rule_end;
   struct symbol *rule_sym;
   int valid;
@@ -59,6 +59,47 @@ int semant_build_rules(struct rules *rules, struct symtab *tab) {
       valid = 0;
       break;
     }
+  }
+
+  return valid ? 0 : -1;
+}
+
+
+/* add references to blocks into symbol table */
+int semant_check_blocks(struct blocks *blocks, struct symtab *tab) {
+  struct block *block_it, *block_end;
+  int valid;
+
+  valid = 1;
+  for (block_it = blocks->blockv, block_end = block_it + blocks->blockc;
+       block_it < block_end; ++block_it) {
+    struct symbol *block_sym = block_it->sym;
+
+    if (block_sym->kind != SYMBOL_BLOCK) {
+      fprintf(stderr, "semant: symbol %s is defined incosnistently.\n",
+	      block_sym->name);
+      valid = 0;
+      continue;
+    }
+    if (block_sym->blk) {
+      fprintf(stderr, "semant: label %s defined more than once.\n", block_sym->name);
+      valid = 0;
+      continue;
+    }
+    block_sym->blk = block_it;
+  }
+  return valid ? 0 : -1;
+}
+
+
+int semant_check(struct program *prog, struct symtab *tab) {
+  int valid = 1;
+
+  if (semant_check_rules(&prog->rules, tab) < 0) {
+    valid = 0;
+  }
+  if (semant_check_blocks(&prog->blocks, tab) < 0) {
+    valid = 0;
   }
 
   return valid ? 0 : -1;

@@ -70,6 +70,9 @@ int main(int argc, char *argv[]) {
     infiles_cnt = i;
   }
 
+  /* other init stuff */
+  symtab_init(&rop_symtab);
+  
   /* lex files */
   for (int i = 0; i < infiles_cnt; ++i) {
     if (lex_file(infiles[i], outfile) < 0) {
@@ -139,6 +142,8 @@ const char *lex_tok2str(int token) {
   case PLUS: return "PLUS";
   case MINUS: return "MINUS";
   case NEWLINE: return "NEWLINE";
+  case NEWSEG: return "NEWSEG";
+  case LABEL: return "LABEL";
   default: return NULL;
   }
 }

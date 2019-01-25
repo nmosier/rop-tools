@@ -13,7 +13,7 @@
   void yyerror(const char *);
   int yylex(void);
   extern int lineno;
-  extern struct rules rop_rules;
+  extern struct program rop_program;
 %}
 
 	/* declarations */
@@ -30,6 +30,9 @@
   struct instructions instructions;
   struct rule rule;
   struct rules rules;
+  struct block block;
+  struct blocks blocks;
+  struct program program;
 }
 
 /* terminals */
@@ -48,20 +51,30 @@
 %token <symbol> SYMBOL
 %token <symbol> IDENTIFIER
 %token NEWLINE
+%token LABEL
+%token NEWSEG
 
 /* non-terminals */
 %type <expression> expression
+
 %type <instruction_prefix> instruction_prefix
 %type <instruction> instruction_line
 %type <instructions> instruction_lines
+
 %type <argument> argument
 %type <arguments> argument_list
 %type <arguments> optional_argument_list
+
 %type <rule> rule_body
 %type <rule> rule
 %type <rule> equate_body
 %type <rule> definition_body
 %type <rules> optional_rule_list
+
+%type <block> code_block
+%type <blocks> optional_code_block_list
+
+%type <program> program
 
 /* precedenance declarations */
 %left PLUS
@@ -69,12 +82,11 @@
 
 %%
 	/* grammar rules */
-
- /* start symbol */
-optional_rule_list:
-  /* empty */ { rules_init(&$$); @$ = 1; }
-| optional_rule_list rule { rules_add(&$2, &$$); rules_add(&$2, &rop_rules); @$ = @1; }
-
+    /* start symbol */
+program:
+  optional_rule_list NEWSEG optional_code_block_list {
+    $$.rules = $1; $$.blocks = $3;
+  }
 
 /* must be constant */
 expression:
@@ -115,7 +127,7 @@ instruction_line:
 
 instruction_lines:
   instruction_line { instructions_init(&$$); instructions_add(&$1, &$$); }
-  | instruction_lines instruction_line { instructions_add(&$2, &$$); }
+  | instruction_lines instruction_line { $$ = $1; instructions_add(&$2, &$$); }
 
 definition_body:
   NEWLINE instruction_lines {
@@ -137,7 +149,26 @@ rule:
     $1->kind = rulek2symk($4.kind);
     $$.args = $2;
   }
-  
+
+optional_rule_list:
+  /* empty */ { rules_init(&$$); @$ = 1; }
+  | optional_rule_list rule {
+    $$ = $1; rules_add(&$2, &$$); /* rules_add(&$2, &rop_rules); */ @$ = @1;
+    rules_add(&$2, &rop_program.rules);
+  }
+
+code_block:
+  IDENTIFIER LABEL NEWLINE instruction_lines {
+    $1->kind = SYMBOL_BLOCK; $$.sym = $1; $$.instrs = $4;
+  }
+
+optional_code_block_list:
+  /* empty */ { blocks_init(&$$); }
+  | optional_code_block_list code_block {
+    $$ = $1; blocks_add(&$2, &$$);
+    blocks_add(&$2, &rop_program.blocks);
+  }
+
 %%
 	/* epilogue */
 void yyerror(const char *s) {
