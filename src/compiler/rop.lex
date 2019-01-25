@@ -7,9 +7,11 @@
 #include "assert.h"
   
 #define LEXER_DEBUG 0
-#define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%d: %s\n", lineno, msg)
+#define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%s:%d: %s\n", \
+					  filename, lineno, msg)
 
-  int lineno;
+  extern int lineno;
+  extern const char *filename;
   extern struct symtab rop_symtab;
 %}
 

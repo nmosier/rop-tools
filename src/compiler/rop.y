@@ -1,6 +1,7 @@
 %{
   #include <stdio.h>
   #include <stdint.h>
+  #include <string.h>
   #include "ast.h"
   #include "util.h"
   #include "symtab.h"
@@ -13,6 +14,7 @@
   void yyerror(const char *);
   int yylex(void);
   extern int lineno;
+  extern const char *filename;
   extern struct program rop_program;
 %}
 
@@ -125,7 +127,8 @@ instruction_prefix:
 
 instruction_line:
   INDENT instruction_prefix optional_argument_list NEWLINE {
-    $$ = $2; $$.args = $3;
+    $$ = $2; $$.args = $3; $$.srcinfo.lineno = lineno;
+    strncpy($$.srcinfo.filename, filename, AST_SRCINFO_FILENAME_MAXLEN);
   }
 
 instruction_lines:
@@ -151,6 +154,8 @@ rule:
     $$.sym = $1;
     $1->kind = rulek2symk($4.kind);
     $$.args = $2;
+    $$.srcinfo.lineno = lineno;
+    strncpy($$.srcinfo.filename, filename, AST_SRCINFO_FILENAME_MAXLEN);
   }
 
 optional_rule_list:
@@ -163,6 +168,8 @@ optional_rule_list:
 code_block:
   IDENTIFIER LABEL NEWLINE instruction_lines {
     $1->kind = SYMBOL_BLOCK; $$.sym = $1; $$.instrs = $4;
+    $$.srcinfo.lineno = lineno;
+    strncpy($$.srcinfo.filename, filename, AST_SRCINFO_FILENAME_MAXLEN);
   }
 
 optional_code_block_list:
@@ -175,5 +182,5 @@ optional_code_block_list:
 %%
 	/* epilogue */
 void yyerror(const char *s) {
-  fprintf(stderr, "rop-parser: line %d %d: %s\n", lineno, yychar, s);
+  fprintf(stderr, "rop-parser: %s:%d %d: %s\n", filename, lineno, yychar, s);
 }

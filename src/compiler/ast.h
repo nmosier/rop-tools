@@ -4,7 +4,14 @@
 
 #include <stdint.h>
 
-/* limits */
+/* source code info */
+#define AST_SRCINFO_FILENAME_MAXLEN 32
+struct srcinfo {
+  int lineno;
+  char filename[AST_SRCINFO_FILENAME_MAXLEN]; // fix later? 
+};
+
+/* AST nodes */
 
 struct expression {
   enum expression_kind {EXPRESSION_SYM,
@@ -50,6 +57,7 @@ struct instruction {
   struct arguments args;
   struct symbol *sym;
   struct rule *ref; // rule that it is a reference to
+  struct srcinfo srcinfo;
 };
 
 struct instructions {
@@ -70,6 +78,7 @@ struct rule {
     struct instructions definition;
     struct expression equate;
   };
+  struct srcinfo srcinfo;
 };
 
 struct rules {
@@ -83,6 +92,7 @@ int rules_add(struct rule *rule, struct rules *rules);
 struct block {
   struct symbol *sym;
   struct instructions instrs;
+  struct srcinfo srcinfo;
 };
 
 struct blocks {

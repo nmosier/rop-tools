@@ -234,8 +234,10 @@ int argument_match(const struct argument *ref, const struct argument *def) {
     }
   case ARGUMENT_REG:
   case ARGUMENT_MEM:
-    if (defk != refk) { return 0; }
-    return symbol_cmp(ref->reg, def->reg);
+    if (defk != refk) {
+      return 0;
+    }
+    return symbol_cmp(ref->reg, def->reg) == 0;
   case ARGUMENT_EXPR:
   default:
     return 0; // only here if internal error or malformed rule

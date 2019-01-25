@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "ast.h"
@@ -9,7 +10,8 @@
 
 extern FILE *yyin;
 extern int yydebug;
-extern int lineno;
+int lineno;
+const char *filename;
 
 //struct rules rop_rules;
 struct program rop_program;
@@ -18,6 +20,7 @@ int debug = 0;
 
 int main(int argc, char *argv[]) {
   FILE *infiles[argc];
+  char *innames[argc];
   int infiles_cnt = 0;
   int exit_status = 0;
   FILE *outfile = stdout;
@@ -73,9 +76,12 @@ int main(int argc, char *argv[]) {
     /* lex standard input */
     infiles_cnt = 1;
     infiles[0] = stdin;
+    innames[0] = "<stdin>";
   } else {
     /* lex all files passed as arguments */
     int i;
+
+    memcpy(innames, argv + optind, sizeof(*innames)*(argc - optind));
     for (i = 0; optind < argc; ++optind, ++i) {
       FILE *infile;
 
@@ -98,6 +104,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < infiles_cnt; ++i) {
     yyin = infiles[i];
     lineno = 1;
+    filename = innames[i];
     yyparse();
   }
 

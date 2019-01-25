@@ -9,6 +9,10 @@
 #include "ast.h"
 #include "symtab.h"
 
+#define SEMANT_ERROR(srcinfo, desc, ...)	\
+  fprintf(stderr, "semant: %s:%d: " desc "\n", (srcinfo).filename, (srcinfo).lineno, \
+	  __VA_ARGS__)
+
 int semant_check_rules(struct rules *rules, struct symtab *tab) {
   struct rule *rule_it, *rule_end;
   struct symbol *rule_sym;
@@ -22,7 +26,9 @@ int semant_check_rules(struct rules *rules, struct symtab *tab) {
     assert(rule_sym); // set at lexer stage
 
     if (rulek2symk(rule_it->kind) != rule_sym->kind) {
-      fprintf(stderr, "semant: %s rule defined inconsistently.\n", rule_sym->name);
+      //fprintf(stderr, "semant: %s rule defined inconsistently.\n", rule_sym->name);
+      SEMANT_ERROR(rule_it->srcinfo, "rule %s defined inconsistently.",
+		   rule_sym->name);
       valid = 0;
       continue;
     }
@@ -31,8 +37,11 @@ int semant_check_rules(struct rules *rules, struct symtab *tab) {
     switch (rule_it->kind) {
     case RULE_DEFINITION:
       if (rules_has(rule_it, &rule_sym->defs)) {
+	SEMANT_ERROR(rule_it->srcinfo, "rule %s with same arguments was already "\
+		     "defined.", rule_sym->name);
+	/*
 	fprintf(stderr, "semant: rule %s with same arguments was already defined.\n",
-		rule_sym->name);
+	rule_sym->name); */
 	valid = 0;
       } else {
 	rules_add(rule_it, &rule_sym->defs);
@@ -40,13 +49,17 @@ int semant_check_rules(struct rules *rules, struct symtab *tab) {
       break;
     case RULE_EQUATE:
       if (rule_it->args.argc != 0) {
-	fprintf(stderr, "semant: equate %s should not take any arguments.\n",
-		rule_sym->name);
+	SEMANT_ERROR(rule_it->srcinfo, "equate %s should not take any arguments.",
+		     rule_sym->name);
+	/* fprintf(stderr, "semant: equate %s should not take any arguments.\n",
+	   rule_sym->name); */
 	valid = 0;
 	break;
       }
       if (rule_sym->equ) {
-	fprintf(stderr, "semant: equate %s was already defined.\n", rule_sym->name);
+	SEMANT_ERROR(rule_it->srcinfo, "equate %s was already defined.",
+		     rule_sym->name);
+	SEMANT_ERROR(rule_sym->equ->srcinfo, "%s", "previous definition.");
 	valid = 0;
 	break;
       }
@@ -76,13 +89,14 @@ int semant_check_blocks(struct blocks *blocks, struct symtab *tab) {
     struct symbol *block_sym = block_it->sym;
 
     if (block_sym->kind != SYMBOL_BLOCK) {
-      fprintf(stderr, "semant: symbol %s is defined incosnistently.\n",
-	      block_sym->name);
+      SEMANT_ERROR(block_it->srcinfo, "symbol %s is defined inconsistently.",
+		   block_sym->name);
       valid = 0;
       continue;
     }
     if (block_sym->blk) {
-      fprintf(stderr, "semant: label %s defined more than once.\n", block_sym->name);
+      SEMANT_ERROR(block_it->srcinfo, "label %s defined more than once.",
+		   block_sym->name);
       valid = 0;
       continue;
     }
@@ -136,8 +150,8 @@ int semant_link_instrs(struct instructions *instrs, struct symtab *tab) {
 
     if (def_it == def_end) {
       /* didn't find a matching definition for instruction instantiation */
-      fprintf(stderr, "semant: found no matching definition for instruction %s.\n",
-	      sym->name); // should add line numbers later...
+      SEMANT_ERROR(instr_it->srcinfo, "found no matching definition for " \
+		   "instruction %s.", sym->name);
       valid = 0;
       continue;
     }
