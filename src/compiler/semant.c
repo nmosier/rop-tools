@@ -92,7 +92,10 @@ int semant_check_blocks(struct blocks *blocks, struct symtab *tab) {
 }
 
 
-int semant_check(struct program *prog, struct symtab *tab) {
+/* links blocks and rules to corresponding entries in the symbol table;
+ * checks for consistency, etc
+ */
+int semant_pass1(struct program *prog, struct symtab *tab) {
   int valid = 1;
 
   if (semant_check_rules(&prog->rules, tab) < 0) {
@@ -103,4 +106,10 @@ int semant_check(struct program *prog, struct symtab *tab) {
   }
 
   return valid ? 0 : -1;
+}
+
+
+/* links instructions to rules that the reference  */
+int semant_pass2(struct program *prog, struct symtab *tab) {
+  return -1; // to be implemented 
 }

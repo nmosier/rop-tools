@@ -52,6 +52,7 @@ struct instruction_prefix {
 struct instruction {
   struct instruction_prefix prefix;
   struct arguments args;
+  struct rule *ref; // rule that it is a reference to
 };
 
 struct instructions {

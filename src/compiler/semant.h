@@ -5,6 +5,6 @@
 #ifndef __SEMANT_H
 #define __SEMANT_H
 
-int semant_check(struct program *prog, struct symtab *tab);
+int semant_pass1(struct program *prog, struct symtab *tab);
 
 #endif

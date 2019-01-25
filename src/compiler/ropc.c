@@ -8,20 +8,22 @@
 #include "semant.h"
 
 extern FILE *yyin;
+extern int yydebug;
 
 //struct rules rop_rules;
 struct program rop_program;
 struct symtab rop_symtab;
+int debug = 0;
 
 int main(int argc, char *argv[]) {
   FILE *infiles[argc];
   int infiles_cnt = 0;
   int exit_status = 0;
   FILE *outfile = stdout;
-  extern int yydebug; yydebug = 0;
+  uint64_t origin = 0;
 
   /* get options */
-  const char *optstring = "o:hd";
+  const char *optstring = "o:hdb:";
   int optchar;
   while ((optchar = getopt(argc, argv, optstring)) >= 0) {
     switch (optchar) {
@@ -31,16 +33,39 @@ int main(int argc, char *argv[]) {
 	exit(1);
       }
       break;
+    case 'b':
+      {
+	char *endptr;	
+	origin = strtoul(optarg, &endptr, 16);
+	if (endptr[0] != '\0') {
+	  fprintf(stderr, "%s: -b: invalid origin: must be nonnegative" \
+		  " 64-bit hexadecimal value.\n", argv[0]);
+	  exit(1);
+	}
+	break;
+      }
     case 'd':
-      yydebug = 1;
+      debug = 1;
       break;
     case 'h':
-      fprintf(stderr, "usage: %s [-d] [-o outfile] [infile...]\n", argv[0]);
+      fprintf(stderr, "usage: %s [-d] [-b origin_addr] [-o outfile] " \
+	      "[infile...]\n", argv[0]);
       exit(0);
     case '?':
     default:
       exit(1);
     }
+  }
+
+  /* more argument checking */
+  if (origin == 0) {
+    fprintf(stderr, "%s: warning: using origin of %zu.\n", argv[0], origin);
+  }
+  yydebug = debug;
+  
+  /* print debug info */
+  if (debug) {
+    fprintf(stderr, "%s: debug: using origin of %lx.\n", argv[0], origin);
   }
 
   if (argc == 1) {
@@ -78,7 +103,7 @@ int main(int argc, char *argv[]) {
   symtab_print(&rop_symtab, stderr);
 
   /* semantic analysis */
-  if (semant_check(&rop_program, &rop_symtab) < 0) {
+  if (semant_pass1(&rop_program, &rop_symtab) < 0) {
     fprintf(stderr, "%s: semantic analyzer detected errors.\n", argv[0]);
     goto cleanup;
   }
