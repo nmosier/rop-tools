@@ -13,9 +13,9 @@ extern int yydebug;
 int lineno;
 const char *filename;
 
-//struct rules rop_rules;
 struct program rop_program;
 struct symtab rop_symtab;
+
 int debug = 0;
 
 int main(int argc, char *argv[]) {

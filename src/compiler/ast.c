@@ -85,9 +85,10 @@ int rules_has(struct rule *rule, struct rules *rules) {
 
 
 
+
 const char *expression_kind2str(enum expression_kind kind) {
   switch (kind) {
-  case EXPRESSION_SYM: return "EXPRESSION_SYM";
+  case EXPRESSION_EXT: return "EXPRESSION_EXT";
   case EXPRESSION_ID: return "EXPRESSION_ID";
   case EXPRESSION_INT: return "EXPRESSION_INT";
   case EXPRESSION_PLUS: return "EXPRESSION_PLUS";

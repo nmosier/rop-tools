@@ -14,7 +14,7 @@ struct srcinfo {
 /* AST nodes */
 
 struct expression {
-  enum expression_kind {EXPRESSION_SYM,
+  enum expression_kind {EXPRESSION_EXT,
 			EXPRESSION_ID,
 			EXPRESSION_INT,
 			EXPRESSION_PLUS,
@@ -29,6 +29,8 @@ struct expression {
     int64_t num;
   };
 };
+
+
 const char *expression_kind2str(enum expression_kind kind);
 
 struct argument {
@@ -93,6 +95,7 @@ struct block {
   struct symbol *sym;
   struct instructions instrs;
   struct srcinfo srcinfo;
+  uint64_t addr;
 };
 
 struct blocks {

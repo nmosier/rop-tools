@@ -91,7 +91,7 @@ program:
 
 /* must be constant */
 expression:
-  SYMBOL  { $$.kind = EXPRESSION_SYM; $$.sym = $1; }
+  SYMBOL  { $$.kind = EXPRESSION_EXT; $$.sym = $1; }
   | IDENTIFIER { $$.kind = EXPRESSION_ID; $$.sym = $1; }
   | INT { $$.kind = EXPRESSION_INT; $$.num = $1; }
   | expression PLUS expression {
