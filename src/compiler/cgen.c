@@ -49,7 +49,7 @@ void environment_construct(struct environment *newenv, struct environment *curen
   assert(def_args->argc == ref_args->argc);
 
   while (ref_arg_it < ref_arg_end) {
-    if (def_arg_it == ARGUMENT_IMM64) {
+    if (def_arg_it->kind == ARGUMENT_IMM64) {
       /* bind ref_arg to expression */
       ref_expr = environment_bindarg(ref_arg_it, curenv);
       assert(ref_expr);
@@ -184,9 +184,12 @@ void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
   uint64_t pc;
 
   pc = pc_origin;
+  expressions_init(&exprlist);
   codegen_pass1(prog, &pc, &exprlist);
 
-
+  /* post-pass-1 assertions */
+  assert(pc == pc_origin + exprlist.exprc);
+  
 }
 
 
