@@ -29,9 +29,30 @@ int main(int argc, char *argv[]) {
   uint64_t origin = 0;
   uint64_t padding = 0;
   uint64_t padding_val = 0;
+  const char *anchor_sym = NULL;
+  uint64_t anchor_addr;
+  FILE *libc_sym_file = NULL;
+  struct libc_syms libc_syms;
 
+
+  /* usage */
+  const char *usage =
+    "usage: %s [-d] [-b origin_addr] [-p padding[,padding_val]] "	\
+    "       [-a anchor_symbol,anchor_addr] [-o outfile] [infile...]\n"	\
+    "Compile ROP gadgets to shellcode.\n"				\
+    "The options are:\n"						\
+    "  -d                     Print debug information\n"		\
+    "  -b <org>               Set origin address, i.e. the injection point\n" \
+    "  -p <padsz>[,<padval>]  Set padding size (in bytes) before current frame's\n" \
+    "                           return address, optionally followed by quad-word\n" \
+    "                           padding value\n"			\
+    "  -a <sym>,<addr>        Anchor libc symbol followed by address\n"	\
+    "  -o <file>              Place compiled shellcode in file\n";
+    
+  
+  
   /* get options */
-  const char *optstring = "o:hdb:p:";
+  const char *optstring = "o:hdb:p:a:";
   int optchar;
   char *endptr;
   char *name;
@@ -68,13 +89,28 @@ int main(int argc, char *argv[]) {
       }
       break;
 
+    case 'a':
+      if ((anchor_sym = strsep(&optarg, ",")) == NULL) {
+	fprintf(stderr, "%s: -a: anchor symbol required as argument.\n", argv[0]);
+	exit(1);
+      }
+      if (optarg == NULL || optarg[0] == '\0') {
+	fprintf(stderr, "%s: -a: anchor address required as argument.\n", argv[0]);
+	exit(1);
+      }
+      anchor_addr = strtoul(optarg, &endptr, 16);
+      if (endptr[0] != '\0') {
+	fprintf(stderr, "%s: -a: invalid anchor address `%s'.\n", argv[0], optarg);
+	exit(1);
+      }
+      break;
+
     case 'd':
       debug = 1;
       break;
 
     case 'h':
-      fprintf(stderr, "usage: %s [-d] [-b origin_addr] [-p padding[,padding_val]] [-o outfile] " \
-	      "[infile...]\n", argv[0]);
+      fprintf(stderr, usage, argv[0]);
       exit(0);
 
     case '?':
@@ -98,7 +134,21 @@ int main(int argc, char *argv[]) {
 	      "boundary.\n", argv[0], directives[i].name);
     }
   }
-  
+
+  /* find offset using anchor */
+  if ((libc_sym_file = fopen("libc.syms", "r")) == NULL) {
+    perror("fopen");
+    exit_status = 3;
+    goto cleanup;
+  }
+  if (libc_syms_init(&libc_syms, libc_sym_file) < 0) {
+    perror("libc_syms_init");
+    exit_status = 4;
+    goto cleanup;
+  }
+  /* test finding sleep */
+  uint64_t sleep_off = libc_syms_getaddr("sleep", &libc_syms);
+  fprintf(stderr, "sleep is at %lx\n", sleep_off);
   
   yydebug = debug;
   
@@ -159,6 +209,13 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < infiles_cnt; ++i) {
     if (fclose(infiles[i]) < 0) {
       perror("fclose");
+      if (exit_status == 0) {
+	exit_status = 2;
+      }
+    }
+  }
+  if (libc_sym_file) {
+    if (fclose(libc_sym_file) < 0) {
       if (exit_status == 0) {
 	exit_status = 2;
       }
