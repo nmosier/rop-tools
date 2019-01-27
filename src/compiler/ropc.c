@@ -8,6 +8,7 @@
 #include "symtab.h"
 #include "semant.h"
 #include "cgen.h"
+#include "util.h"
 
 extern FILE *yyin;
 extern int yydebug;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
       break;
 
     case 'h':
-      fprintf(stderr, "usage: %s [-d] [-b origin_addr] [-p padding] [-o outfile] " \
+      fprintf(stderr, "usage: %s [-d] [-b origin_addr] [-p padding[,padding_val]] [-o outfile] " \
 	      "[infile...]\n", argv[0]);
       exit(0);
 
@@ -83,12 +84,21 @@ int main(int argc, char *argv[]) {
   }
 
   /* more argument checking */
-  if (origin == 0) {
-    fprintf(stderr, "%s: warning: using origin of %lx.\n", argv[0], origin);
+  struct {
+    uint64_t val;
+    const char *name;
+  } directives[] = { {origin, "origin"}, {padding, "padding"} };
+  for (int i = 0; i < ARRLEN(directives); ++i) {
+    if (directives[i].val == 0) {
+      fprintf(stderr, "%s: warning: using %s of %lx.\n", argv[0], directives[i].name,
+	      directives[i].val);
+    }
+    if (directives[i].val % 8) {
+      fprintf(stderr, "%s: warning: %s is not aligned on qword (8-byte) " \
+	      "boundary.\n", argv[0], directives[i].name);
+    }
   }
-  if (padding == 0) {
-    fprintf(stderr, "%s: warning: using padding of %lx.\n", argv[0], padding);
-  }
+  
   
   yydebug = debug;
   

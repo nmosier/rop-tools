@@ -183,11 +183,11 @@ void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
                                // resolve to imm64's
   uint64_t pc;
 
-  pc = pc_origin;
+  pc = pc_origin + padding;
   expressions_init(&exprlist);
 
   /* produce padding */
-  for (uint64_t i = 0; i < padding; ++i) {
+  for (uint64_t i = 0; i < padding/QWORD_SIZE; ++i) {
     fwrite(&padding_val, sizeof(padding_val), 1, outfile);
   }
   
@@ -195,7 +195,7 @@ void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
   codegen_pass1(prog, &pc, &exprlist);
 
   /* post-pass-1 assertions */
-  assert(pc == pc_origin + exprlist.exprc);
+  assert(pc == pc_origin + padding + exprlist.exprc);
 
   /* pass 2 */
   codegen_pass2(&exprlist, outfile);

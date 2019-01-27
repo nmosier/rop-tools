@@ -12,4 +12,6 @@ void *memdup_f(void *ptr, size_t size);
 
 #define MAX(i1, i2) ((i1) < (i2) ? (i2) : (i1))
 
+#define ARRLEN(arr) (sizeof(arr) / sizeof(arr[0]))
+
 #endif

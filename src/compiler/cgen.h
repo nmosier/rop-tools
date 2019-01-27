@@ -10,6 +10,7 @@
 #include "ast.h"
 #include "symtab.h"
 
+#define QWORD_SIZE 8
 
 struct expressions {
   struct expression **exprv;
