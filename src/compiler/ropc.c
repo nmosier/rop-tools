@@ -30,7 +30,8 @@ int main(int argc, char *argv[]) {
   uint64_t padding = 0;
   uint64_t padding_val = 0;
   const char *anchor_sym = NULL;
-  uint64_t anchor_addr;
+  uint64_t anchor_addr, libc_base_addr;
+  const char *libc_sym_path = "libc.syms";
   FILE *libc_sym_file = NULL;
   struct libc_syms libc_syms;
 
@@ -38,7 +39,8 @@ int main(int argc, char *argv[]) {
   /* usage */
   const char *usage =
     "usage: %s [-d] [-b origin_addr] [-p padding[,padding_val]] "	\
-    "       [-a anchor_symbol,anchor_addr] [-o outfile] [infile...]\n"	\
+    "        [-a anchor_symbol,anchor_addr] [-s syms_path] [-o outfile] " \
+    "        [infile...]\n"							\
     "Compile ROP gadgets to shellcode.\n"				\
     "The options are:\n"						\
     "  -d                     Print debug information\n"		\
@@ -47,25 +49,26 @@ int main(int argc, char *argv[]) {
     "                           return address, optionally followed by quad-word\n" \
     "                           padding value\n"			\
     "  -a <sym>,<addr>        Anchor libc symbol followed by address\n"	\
+    "  -s <file>              Path to nm(1) dump of libc symbols\n"	\
     "  -o <file>              Place compiled shellcode in file\n";
     
   
   
   /* get options */
-  const char *optstring = "o:hdb:p:a:";
+  const char *optstring = "o:hdb:p:a:s:";
   int optchar;
   char *endptr;
   char *name;
   while ((optchar = getopt(argc, argv, optstring)) >= 0) {
     switch (optchar) {
-    case 'o':
+    case 'o': // output file
       if ((outfile = fopen(optarg, "w")) == NULL) {
 	perror("fopen");
 	exit(1);
       }
       break;
 
-    case 'b':
+    case 'b': // origin
       origin = strtoul(optarg, &endptr, 16);
       if (endptr[0] != '\0') {
  	fprintf(stderr, "%s: -b: invalid origin: must be nonnegative"	\
@@ -74,7 +77,7 @@ int main(int argc, char *argv[]) {
       }
       break;
 
-    case 'p':
+    case 'p': // padding information
       padding = strtoul(optarg, &endptr, 16);
       name = "padding";
       if (endptr[0] == ',') {
@@ -89,7 +92,7 @@ int main(int argc, char *argv[]) {
       }
       break;
 
-    case 'a':
+    case 'a': // anchor information 
       if ((anchor_sym = strsep(&optarg, ",")) == NULL) {
 	fprintf(stderr, "%s: -a: anchor symbol required as argument.\n", argv[0]);
 	exit(1);
@@ -105,15 +108,19 @@ int main(int argc, char *argv[]) {
       }
       break;
 
-    case 'd':
+    case 's': // path to symbol table
+      libc_sym_path = optarg;
+      break;
+
+    case 'd': // debug flag
       debug = 1;
       break;
 
-    case 'h':
+    case 'h': // help
       fprintf(stderr, usage, argv[0]);
       exit(0);
 
-    case '?':
+    case '?': // unknown
     default:
       exit(1);
     }
@@ -135,8 +142,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /* find offset using anchor */
-  if ((libc_sym_file = fopen("libc.syms", "r")) == NULL) {
+  //yydebug = debug;
+  
+  /* open libc symtab file and initialize libc symbol table */
+  if ((libc_sym_file = fopen(libc_sym_path, "r")) == NULL) {
     perror("fopen");
     exit_status = 3;
     goto cleanup;
@@ -146,18 +155,33 @@ int main(int argc, char *argv[]) {
     exit_status = 4;
     goto cleanup;
   }
-  /* test finding sleep */
-  uint64_t sleep_off = libc_syms_getaddr("sleep", &libc_syms);
-  fprintf(stderr, "sleep is at %lx\n", sleep_off);
-  
-  yydebug = debug;
+
+  /* resolve base address (if given) */
+  if (anchor_sym) {
+    uint64_t libc_sym_off;
+
+    if ((libc_sym_off = libc_syms_getaddr(anchor_sym, &libc_syms))
+	== (uint64_t) -1) {
+      fprintf(stderr, "%s: -a: anchor symbol `%s' could not be resolved.\n",
+	      argv[0], anchor_sym);
+      goto cleanup;
+    }
+
+    /* set libc base address */
+    libc_base_addr = anchor_addr - libc_sym_off;
+    if (debug) {
+      fprintf(stderr, "%s: debug: using libc base address of 0x%lx.\n", argv[0],
+	      libc_base_addr);
+    }
+  }
+ 
   
   /* print debug info */
   if (debug) {
     fprintf(stderr, "%s: debug: using origin of %lx.\n", argv[0], origin);
   }
 
-  if (argc == 1) {
+  if (optind == argc) {
     /* lex standard input */
     infiles_cnt = 1;
     infiles[0] = stdin;

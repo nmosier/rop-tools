@@ -77,7 +77,7 @@ uint64_t libc_syms_getaddr(const char *name, const struct libc_syms *syms) {
   struct libc_sym key;
 
   if (strlen(name) >= LIBC_SYM_NAME_MAXLEN) {
-    return 0; // = NULL
+    return -1;
   }
   strcpy(key.name, name);
   if ((sym = bsearch(&key, syms->symv, syms->symc, sizeof(*sym),
