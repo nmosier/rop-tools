@@ -239,8 +239,8 @@ int main(int argc, char *argv[]) {
   }
 
   /* code generation */
-  codegen(&rop_program, &rop_symtab, &libc_syms, origin, padding, padding_val,
-	  outfile);
+  codegen(&rop_program, &rop_symtab, origin, libc_base_addr, &libc_syms, padding,
+	  padding_val, outfile);
   
  cleanup:
   for (int i = 0; i < infiles_cnt; ++i) {
