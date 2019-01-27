@@ -9,6 +9,7 @@
 #include "semant.h"
 #include "cgen.h"
 #include "util.h"
+#include "ropc.h"
 
 extern FILE *yyin;
 extern int yydebug;
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]) {
   uint64_t padding = 0;
   uint64_t padding_val = 0;
   const char *anchor_sym = NULL;
-  uint64_t anchor_addr, libc_base_addr;
+  uint64_t anchor_addr, libc_base_addr = 0;
   const char *libc_sym_path = "libc.syms";
   FILE *libc_sym_file = NULL;
   struct libc_syms libc_syms;
@@ -126,24 +127,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /* more argument checking */
-  struct {
-    uint64_t val;
-    const char *name;
-  } directives[] = { {origin, "origin"}, {padding, "padding"} };
-  for (int i = 0; i < ARRLEN(directives); ++i) {
-    if (directives[i].val == 0) {
-      fprintf(stderr, "%s: warning: using %s of %lx.\n", argv[0], directives[i].name,
-	      directives[i].val);
-    }
-    if (directives[i].val % 8) {
-      fprintf(stderr, "%s: warning: %s is not aligned on qword (8-byte) " \
-	      "boundary.\n", argv[0], directives[i].name);
-    }
-  }
-
-  //yydebug = debug;
-  
   /* open libc symtab file and initialize libc symbol table */
   if ((libc_sym_file = fopen(libc_sym_path, "r")) == NULL) {
     perror("fopen");
@@ -174,12 +157,41 @@ int main(int argc, char *argv[]) {
 	      libc_base_addr);
     }
   }
- 
+  
+  /* parameter address/offset checking:
+   *   - warning if address/offset not properly aligned
+   *   - warning if address/offset is zero */
+  struct {
+    int flags;
+    uint64_t val;
+    const char *name;
+    int align;
+  } directives[] = { {ROPC_ADDR_CHK_ALIGN|ROPC_ADDR_CHK_POS, origin, "origin",
+		      QWORD_SIZE},
+		     {ROPC_ADDR_CHK_ALIGN|ROPC_ADDR_CHK_POS, padding, "padding",
+		      QWORD_SIZE},
+		     {ROPC_ADDR_CHK_POS, libc_base_addr, "libc base address",
+		      -1},
+  };
+  for (int i = 0; i < ARRLEN(directives); ++i) {
+    if ((directives[i].flags & ROPC_ADDR_CHK_POS) && directives[i].val == 0) {
+      fprintf(stderr, "%s: warning: using %s of %lx.\n", argv[0], directives[i].name,
+	      directives[i].val);
+    }
+    if ((directives[i].flags & ROPC_ADDR_CHK_ALIGN) && directives[i].val %
+	directives[i].align) {
+      fprintf(stderr, "%s: warning: %s is not aligned on %d-byte "	\
+	      "boundary.\n", argv[0], directives[i].name, directives[i].align);
+    }
+  }
+
+
   
   /* print debug info */
   if (debug) {
     fprintf(stderr, "%s: debug: using origin of %lx.\n", argv[0], origin);
   }
+
 
   if (optind == argc) {
     /* lex standard input */
@@ -227,7 +239,8 @@ int main(int argc, char *argv[]) {
   }
 
   /* code generation */
-  codegen(&rop_program, &rop_symtab, origin, padding, padding_val, outfile);
+  codegen(&rop_program, &rop_symtab, &libc_syms, origin, padding, padding_val,
+	  outfile);
   
  cleanup:
   for (int i = 0; i < infiles_cnt; ++i) {

@@ -7,6 +7,7 @@
 
 /* types */
 #define LIBC_SYM_NAME_MAXLEN 128
+#define LIBC_SYM_LINE_MAXLEN 128
 struct libc_sym {
   char name[LIBC_SYM_NAME_MAXLEN];
   uint64_t offset;
@@ -17,6 +18,8 @@ struct libc_syms {
   int symc;
   int maxc;
 };
+
+
 void libc_syms_init_bare(struct libc_syms *syms);
 int libc_syms_init(struct libc_syms *syms, FILE *symf);
 int libc_syms_add(struct libc_sym *sym, struct libc_syms *syms);  

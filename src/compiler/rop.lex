@@ -1,10 +1,11 @@
 %{
 #include <stdio.h>
+#include <assert.h>
 
 #include "ast.h"
 #include "rop.tab.h"
 #include "symtab.h"
-#include "assert.h"
+#include "util.h"
   
 #define LEXER_DEBUG 0
 #define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%s:%d: %s\n", \
@@ -95,7 +96,10 @@ resq			      { return RESQ; }
 }
         /* symbols */
 "<"[[:graph:]]+">"	{
-  struct symbol *sym = symtab_put_bare(yytext, &rop_symtab);
+  char *name = strdup(yytext + 1);
+  name[yyleng - 2] = '\0';
+  struct symbol *sym = symtab_put_bare(name, &rop_symtab);
+  free(name);
   assert (sym);
   sym->kind = SYMBOL_EXTERN; // we already know this b/c of the angle brackets
   yylval.symbol = sym;

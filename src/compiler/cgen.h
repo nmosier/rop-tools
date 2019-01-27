@@ -9,6 +9,7 @@
 
 #include "ast.h"
 #include "symtab.h"
+#include "util.h"
 
 #define QWORD_SIZE 8
 
@@ -34,19 +35,26 @@ void environment_construct(struct environment *newenv, struct environment *curen
 
 /* pass 1 */
 void codegen_1_block(struct block *block, struct environment *env,
-		    struct expressions *exprlist);
+		     const struct libc_syms *libc_env,
+		     struct expressions *exprlist);
 void codegen_1_defn(struct rule *defn, struct environment *env,
-		   struct expressions *exprlist);
+		    const struct libc_syms *libc_env,
+		    struct expressions *exprlist);
+void codegen_pass1(struct program *prog, uint64_t *pc, struct expressions *exprlist,
+		   const struct libc_syms *libc_env);
 void codegen_1_instruction(struct instruction *instr, struct environment *env,
+			   const struct libc_syms *libc_env,
 			   struct expressions *exprlist);
-void codegen_pass1(struct program *prog, uint64_t *pc, struct expressions *exprlist);
 
-void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
+void codegen(struct program *prog, struct symtab *tab,
+	     const struct libc_syms *libc_env, uint64_t pc_origin,
 	     uint64_t padding, uint64_t padding_val, FILE *outfile);
 
-uint64_t compute_expression(const struct expression *expr, int pass);
-uint64_t compute_symbol(const struct symbol *sym, int pass);
-
-void codegen_pass2(struct expressions *exprlist, FILE *outfile);
+uint64_t compute_expression(const struct expression *expr, int pass,
+			    const struct libc_syms *libc_env);
+uint64_t compute_symbol(const struct symbol *sym, int pass,
+			const struct libc_syms *libc_env);
+void codegen_pass2(struct expressions *exprlist, const struct libc_syms *libc_env,
+		   FILE *outfile);
 
 #endif

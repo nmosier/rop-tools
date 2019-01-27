@@ -27,27 +27,43 @@ int libc_syms_cmp(const struct libc_sym *lhs, const struct libc_sym *rhs) {
   return strcmp(lhs->name, rhs->name);
 }
 
+
 int libc_syms_init(struct libc_syms *syms, FILE *symf) {
   struct libc_sym sym;
+  int offset_present;
+  char line[LIBC_SYM_LINE_MAXLEN];
 
   libc_syms_init_bare(syms);
 
-  while (!feof(symf)) {
-    if (fscanf(symf, "%lx", &sym.offset) < 1) {
+  while (fgets(line, LIBC_SYM_LINE_MAXLEN, symf)) {
+    offset_present = (line[0] == ' ') ? 0 : 1; // whether offset is present
+    
+    /* parse offset */
+    if (offset_present) {
+      if (sscanf(line, "%lx %*c %127s\n", &sym.offset, sym.name) < 2) {
+	return -1; // syntax error
+      }
+    } else {
       /* use previous offset */
       if (syms->symc == 0) {
 	return -1; // syntax error
       }
       sym.offset = syms->symv[syms->symc-1].offset;
-    } else {
-      fscanf(symf, "%*c");
+      if (sscanf(line, "%*s %127s\n", sym.name) < 1) {
+	return -1; // syntax error
+      }
     }
-    if (fscanf(symf, "%127s\n", sym.name) < 1) {
-      return -1; // syntax error
+    if (ferror(symf)) {
+      return -1;
     }
+
+    /* add symbol to table */
     if (libc_syms_add(&sym, syms) < 0) {
       return -1;
     }
+
+    /* debug */
+    //fprintf(stderr, "%lx %s\n", sym.offset, sym.name);
   }
 
   /* sort */
@@ -83,7 +99,7 @@ uint64_t libc_syms_getaddr(const char *name, const struct libc_syms *syms) {
   if ((sym = bsearch(&key, syms->symv, syms->symc, sizeof(*sym),
 		     (int (*)(const void *, const void *)) libc_syms_cmp))
       == NULL) {
-    return 0; // = NULL
+    return -1; // = NULL
   }
 
   return sym->offset;
