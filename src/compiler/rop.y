@@ -54,6 +54,8 @@
 %token NEWLINE
 %token LABEL
 %token NEWSEG
+%token ORIGIN
+%token PADDING
 
 /* non-terminals */
 %type <expression> expression
@@ -76,6 +78,7 @@
 %type <blocks> optional_code_block_list
 
 %type <program> program
+
 
 /* precedenance declarations */
 %left PLUS

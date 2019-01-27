@@ -31,6 +31,11 @@ struct expression {
 };
 
 
+struct directive {
+  enum directive_kind {DIRECTIVE_ORG, DIRECTIVE_PAD} kind;
+  struct expression expr;
+};
+
 const char *expression_kind2str(enum expression_kind kind);
 
 struct argument {

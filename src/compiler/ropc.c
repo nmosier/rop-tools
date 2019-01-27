@@ -26,10 +26,14 @@ int main(int argc, char *argv[]) {
   int exit_status = 0;
   FILE *outfile = stdout;
   uint64_t origin = 0;
+  uint64_t padding = 0;
+  uint64_t padding_val = 0;
 
   /* get options */
-  const char *optstring = "o:hdb:";
+  const char *optstring = "o:hdb:p:";
   int optchar;
+  char *endptr;
+  char *name;
   while ((optchar = getopt(argc, argv, optstring)) >= 0) {
     switch (optchar) {
     case 'o':
@@ -38,24 +42,40 @@ int main(int argc, char *argv[]) {
 	exit(1);
       }
       break;
+
     case 'b':
-      {
-	char *endptr;	
-	origin = strtoul(optarg, &endptr, 16);
-	if (endptr[0] != '\0') {
-	  fprintf(stderr, "%s: -b: invalid origin: must be nonnegative" \
-		  " 64-bit hexadecimal value.\n", argv[0]);
-	  exit(1);
-	}
-	break;
+      origin = strtoul(optarg, &endptr, 16);
+      if (endptr[0] != '\0') {
+ 	fprintf(stderr, "%s: -b: invalid origin: must be nonnegative"	\
+		" 64-bit hexadecimal integer.\n", argv[0]);
+	exit(1);
       }
+      break;
+
+    case 'p':
+      padding = strtoul(optarg, &endptr, 16);
+      name = "padding";
+      if (endptr[0] == ',') {
+	char *padding_val_str = endptr + 1;
+	padding_val = strtoul(padding_val_str, &endptr, 16);
+	name = "padding value";
+      }
+      if (endptr[0] != '\0') {
+	fprintf(stderr, "%s: -b: invalid %s: must be nonnegative " \
+		"64-bit hexadecimal integer.\n", argv[0], name);
+	exit(1);
+      }
+      break;
+
     case 'd':
       debug = 1;
       break;
+
     case 'h':
-      fprintf(stderr, "usage: %s [-d] [-b origin_addr] [-o outfile] " \
+      fprintf(stderr, "usage: %s [-d] [-b origin_addr] [-p padding] [-o outfile] " \
 	      "[infile...]\n", argv[0]);
       exit(0);
+
     case '?':
     default:
       exit(1);
@@ -64,8 +84,12 @@ int main(int argc, char *argv[]) {
 
   /* more argument checking */
   if (origin == 0) {
-    fprintf(stderr, "%s: warning: using origin of %zu.\n", argv[0], origin);
+    fprintf(stderr, "%s: warning: using origin of %lx.\n", argv[0], origin);
   }
+  if (padding == 0) {
+    fprintf(stderr, "%s: warning: using padding of %lx.\n", argv[0], padding);
+  }
+  
   yydebug = debug;
   
   /* print debug info */
@@ -119,7 +143,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* code generation */
-  codegen(&rop_program, &rop_symtab, origin, stdout);
+  codegen(&rop_program, &rop_symtab, origin, padding, padding_val, outfile);
   
  cleanup:
   for (int i = 0; i < infiles_cnt; ++i) {
@@ -134,4 +158,3 @@ int main(int argc, char *argv[]) {
   exit(exit_status);
 
 }
-

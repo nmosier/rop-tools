@@ -178,17 +178,27 @@ void codegen_pass1(struct program *prog, uint64_t *pc, struct expressions *exprl
 
 
 void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
-	    FILE *outfile) {
+	     uint64_t padding, uint64_t padding_val, FILE *outfile) {
   struct expressions exprlist; // intermediate list of expressions that will
                                // resolve to imm64's
   uint64_t pc;
 
   pc = pc_origin;
   expressions_init(&exprlist);
+
+  /* produce padding */
+  for (uint64_t i = 0; i < padding; ++i) {
+    fwrite(&padding_val, sizeof(padding_val), 1, outfile);
+  }
+  
+  /* pass 1 */
   codegen_pass1(prog, &pc, &exprlist);
 
   /* post-pass-1 assertions */
   assert(pc == pc_origin + exprlist.exprc);
+
+  /* pass 2 */
+  codegen_pass2(&exprlist, outfile);
   
 }
 
@@ -261,5 +271,23 @@ uint64_t compute_symbol(const struct symbol *sym, int pass) {
   case SYMBOL_UNKNOWN:
   default:
     assert(0);
+  }
+}
+
+
+
+/********************************************\
+|******************* PASS 2 *****************|
+\********************************************/
+
+void codegen_pass2(struct expressions *exprlist, FILE *outfile) {
+  struct expression **expr_it, **expr_end;
+  uint64_t qword;
+
+  /* evaluate expressions & write pseudo machine code to file */
+  for (expr_it = exprlist->exprv, expr_end = expr_it + exprlist->exprc;
+       expr_it < expr_end; ++expr_it) {
+    qword = compute_expression(*expr_it, PASS2);
+    fwrite(&qword, sizeof(qword), 1, outfile);
   }
 }

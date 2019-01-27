@@ -41,10 +41,11 @@ void codegen_1_instruction(struct instruction *instr, struct environment *env,
 void codegen_pass1(struct program *prog, uint64_t *pc, struct expressions *exprlist);
 
 void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
-	     FILE *outfile);
+	     uint64_t padding, uint64_t padding_val, FILE *outfile);
 
 uint64_t compute_expression(const struct expression *expr, int pass);
 uint64_t compute_symbol(const struct symbol *sym, int pass);
 
+void codegen_pass2(struct expressions *exprlist, FILE *outfile);
 
 #endif
