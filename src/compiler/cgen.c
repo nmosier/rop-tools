@@ -111,7 +111,7 @@ void codegen_1_instruction(struct instruction *instr, struct environment *env,
     expr = environment_bindarg(arg, env);
     assert(expr);
     expressions_add(expr, exprlist);
-    ++(*env->pc);
+    *env->pc += QWORD_SIZE;
     break;
 
   case INSTRUCTION_RESQ:
@@ -124,7 +124,7 @@ void codegen_1_instruction(struct instruction *instr, struct environment *env,
     for (uint64_t i = 0; i < num; ++i) {
       expressions_add(&resq_expr, exprlist);
     }
-    *env->pc += num;
+    *env->pc += num * QWORD_SIZE;
     break;
     
   case INSTRUCTION_DQ:
@@ -133,7 +133,7 @@ void codegen_1_instruction(struct instruction *instr, struct environment *env,
     expr = environment_bindarg(arg, env);
     assert(expr);
     expressions_add(expr, exprlist);
-    ++(*env->pc);
+    *env->pc += QWORD_SIZE;
     break;
 
   case INSTRUCTION_RULE:
@@ -195,7 +195,7 @@ void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
   codegen_pass1(prog, &pc, &exprlist);
 
   /* post-pass-1 assertions */
-  assert(pc == pc_origin + padding + exprlist.exprc);
+  assert(pc == pc_origin + padding + exprlist.exprc*QWORD_SIZE);
 
   /* pass 2 */
   codegen_pass2(&exprlist, outfile);

@@ -2,12 +2,13 @@
 
 CFLAGS=-c -g -Wall -pedantic
 ROPC_OBJS=ropc.o lex.yy.o rop.tab.o ast.o util.o symtab.o semant.o cgen.o
+LIBC=/lib/libc.so.6
 
 .PHONY: all
 all: ropc rop-lexer symtab.o
 
-ropc: $(ROPC_OBJS)
-	gcc -o $@ $^
+ropc: $(ROPC_OBJS) libc.syms
+	gcc -o $@ $(ROPC_OBJS)
 
 rop-lexer: lex.yy.o rop-lexer-main.o symtab.o
 	gcc $(OFLAGS) -o $@ $^
@@ -22,6 +23,8 @@ lex.yy.c: rop.lex rop.tab.h
 rop.tab.c rop.tab.h: rop.y
 	bison -d $^
 
+libc.syms:
+	nm $(LIBC) > $@
 
 %.o: %.c
 	gcc $(CFLAGS) -o $@ $^
