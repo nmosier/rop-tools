@@ -70,6 +70,7 @@ NUMBER_HEX	       "-"?0x[[:xdigit:]]+
 ":="			      { return DEF; }
 "#"+\n                        { return NEWSEG; }
 ":"                           { return LABEL; }
+"&"                           { return ADDR; }
 
          /* keywords */
 ret			      { return RET; }

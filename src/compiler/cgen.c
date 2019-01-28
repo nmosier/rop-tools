@@ -85,7 +85,7 @@ void codegen_1_block(struct block *block, const struct environment *env,
 }
 
 void codegen_1_defn(struct rule *defn, struct environment *env,
-		   struct expressions *exprlist) {
+		    struct expressions *exprlist) {
   struct instructions *instrs;
   struct instruction *instr_it, *instr_end;
 
@@ -115,6 +115,13 @@ void codegen_1_instruction(struct instruction *instr, const struct environment *
     expr = environment_bindarg(arg, env);
     assert(expr);
     expressions_add(expr, exprlist);
+    /* init new return expression */
+    //retexpr.kind = EXPRESSION_PLUS;
+    //retexpr.lhs = expr;
+    //retexpr.rhs = memdup(&base_expr);
+    //assert(retexpr.rhs);
+      
+    //expressions_add(&retexpr, exprlist);
     *env->pc += QWORD_SIZE;
     break;
 
@@ -217,7 +224,7 @@ void expressions_init(struct expressions *exprs) {
 int expressions_add(struct expression *expr, struct expressions *exprs) {
   if (exprs->exprc == exprs->maxc) {
     /* resize */
-    struct expression **exprv;
+    struct expression *exprv;
     int newc;
     newc = MAX(exprs->maxc*2, ARR_MINLEN);
     if ((exprv = realloc(exprs->exprv, sizeof(*exprv)*newc)) == NULL) {
@@ -226,7 +233,7 @@ int expressions_add(struct expression *expr, struct expressions *exprs) {
     exprs->exprv = exprv;
     exprs->maxc = newc;
   }
-  exprs->exprv[exprs->exprc++] = expr;
+  memcpy(&exprs->exprv[exprs->exprc++], expr, sizeof(*expr));
   return 0;
 }
 
@@ -249,6 +256,9 @@ uint64_t compute_expression(const struct expression *expr,
   case EXPRESSION_EXT:
   case EXPRESSION_ID:
     return compute_symbol(expr->sym, env, pass);
+
+  case EXPRESSION_ADDR:
+    return env->libc_base + compute_expression(expr->offset, env, pass);
 
   default:
     assert(0);
@@ -296,13 +306,13 @@ uint64_t compute_symbol(const struct symbol *sym, const struct environment *env,
 
 void codegen_pass2(struct expressions *exprlist, const struct environment *env,
 		   FILE *outfile) {
-  struct expression **expr_it, **expr_end;
+  struct expression *expr_it, *expr_end;
   uint64_t qword;
 
   /* evaluate expressions & write pseudo machine code to file */
   for (expr_it = exprlist->exprv, expr_end = expr_it + exprlist->exprc;
        expr_it < expr_end; ++expr_it) {
-    qword = compute_expression(*expr_it, env, PASS2);
+    qword = compute_expression(expr_it, env, PASS2);
     fwrite(&qword, sizeof(qword), 1, outfile);
   }
 }

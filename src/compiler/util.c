@@ -9,7 +9,7 @@
 
 #include "util.h"
 
-void *memdup_f(void *ptr, size_t size) {
+void *memdup_f(const void *ptr, size_t size) {
   void *newptr = malloc(size);
   if (newptr) {
     memcpy(newptr, ptr, size);

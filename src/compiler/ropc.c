@@ -229,8 +229,9 @@ int main(int argc, char *argv[]) {
     yyparse();
   }
 
-  /* debugging: print out symtab */
-  symtab_print(&rop_symtab, stderr);
+  if (debug) {
+    symtab_print(&rop_symtab, stderr);
+  }
 
   /* semantic analysis */
   if (semant(&rop_program, &rop_symtab) < 0) {

@@ -18,7 +18,8 @@ struct expression {
 			EXPRESSION_ID,
 			EXPRESSION_INT,
 			EXPRESSION_PLUS,
-		        EXPRESSION_MINUS}
+		        EXPRESSION_MINUS,
+			EXPRESSION_ADDR}
     kind; /* in case of binop, kind = binop token */
   union {
     struct {
@@ -27,6 +28,7 @@ struct expression {
     };
     struct symbol *sym;
     int64_t num;
+    struct expression *offset;
   };
 };
 

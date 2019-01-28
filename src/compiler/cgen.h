@@ -14,7 +14,7 @@
 #define QWORD_SIZE 8
 
 struct expressions {
-  struct expression **exprv;
+  struct expression *exprv;
   int exprc;
   int maxc;
 };

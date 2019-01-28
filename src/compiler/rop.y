@@ -54,8 +54,8 @@
 %token NEWLINE
 %token LABEL
 %token NEWSEG
-%token ORIGIN
-%token PADDING
+%token ADDR
+
 
 /* non-terminals */
 %type <expression> expression
@@ -102,7 +102,13 @@ expression:
     $$.lhs = memdup(&$1);
     $$.rhs = memdup(&$3);
   }
-  | expression MINUS expression { $$.kind = EXPRESSION_MINUS; $$.lhs = &($1); $$.rhs = &($3); }
+  | expression MINUS expression {
+      $$.kind = EXPRESSION_MINUS; $$.lhs = &($1); $$.rhs = &($3);
+    }
+  | ADDR expression {
+      $$.kind = EXPRESSION_ADDR;
+      $$.offset = memdup(&$2);
+    }
 
 argument:
   IMM64 { $$.kind = ARGUMENT_IMM64; }

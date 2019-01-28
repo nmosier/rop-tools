@@ -25,8 +25,8 @@ int libc_syms_init(struct libc_syms *syms, FILE *symf);
 int libc_syms_add(struct libc_sym *sym, struct libc_syms *syms);  
 uint64_t libc_syms_getaddr(const char *name, const struct libc_syms *syms);
 
-#define memdup(ptr) ((typeof(ptr)) memdup_f(ptr, sizeof(*ptr)))
-void *memdup_f(void *ptr, size_t size);
+#define memdup(ptr) (memdup_f(ptr, sizeof(*ptr)))
+void *memdup_f(const void *ptr, size_t size);
 
 #define MAX(i1, i2) ((i1) < (i2) ? (i2) : (i1))
 #define ARR_MINLEN 16
