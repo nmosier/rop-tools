@@ -1,7 +1,7 @@
 # Nicholas Mosier, January 2019
 
 CFLAGS=-c -g -Wall -pedantic
-ROPC_OBJS=ropc.o lex.yy.o rop.tab.o ast.o util.o symtab.o semant.o cgen.o
+ROPC_OBJS=ropc.o lex.yy.o rop.tab.o ast.o util.o symtab.o semant.o cgen.o config.o
 LIBC=/lib/libc.so.6
 
 .PHONY: all

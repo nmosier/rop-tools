@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "ast.h"
 #include "rop.tab.h"
@@ -9,6 +10,7 @@
 #include "semant.h"
 #include "cgen.h"
 #include "util.h"
+#include "config.h"
 #include "ropc.h"
 
 extern FILE *yyin;
@@ -51,67 +53,62 @@ int main(int argc, char *argv[]) {
     "                           padding value\n"			\
     "  -a <sym>,<addr>        Anchor libc symbol followed by address\n"	\
     "  -s <file>              Path to nm(1) dump of libc symbols\n"	\
-    "  -o <file>              Place compiled shellcode in file\n";
+    "  -o <file>              Place compiled shellcode in file\n"	\
+    "  -c <config_file>       Path to configuration file containing directives\n"\
+    "                           followed by paramters. Supported directives:\n" \
+    "                           .origin <addr>\n"			\
+    "                           .padding <len> [<val>]\n"		\
+    "                           .anchor <sym> <addr>\n"			\
+    "                           .symbols <path>\n";
+
     
   
   
   /* get options */
-  const char *optstring = "o:hdb:p:a:s:";
+  const char *optstring = "o:hdb:p:a:s:c:";
   int optchar;
-  char *endptr;
-  char *name;
   while ((optchar = getopt(argc, argv, optstring)) >= 0) {
     switch (optchar) {
     case 'o': // output file
       if ((outfile = fopen(optarg, "w")) == NULL) {
-	perror("fopen");
+	fprintf(stderr, "%s: fopen(%s): %s\n", argv[0], optarg, strerror(errno));
 	exit(1);
       }
       break;
 
     case 'b': // origin
-      origin = strtoul(optarg, &endptr, 16);
-      if (endptr[0] != '\0') {
- 	fprintf(stderr, "%s: -b: invalid origin: must be nonnegative"	\
-		" 64-bit hexadecimal integer.\n", argv[0]);
+      if (config_origin(optarg, &origin) < 0) {
 	exit(1);
       }
       break;
 
     case 'p': // padding information
-      padding = strtoul(optarg, &endptr, 16);
-      name = "padding";
-      if (endptr[0] == ',') {
-	char *padding_val_str = endptr + 1;
-	padding_val = strtoul(padding_val_str, &endptr, 16);
-	name = "padding value";
-      }
-      if (endptr[0] != '\0') {
-	fprintf(stderr, "%s: -b: invalid %s: must be nonnegative " \
-		"64-bit hexadecimal integer.\n", argv[0], name);
+      if (config_padding(optarg, &padding, &padding_val) < 0) {
 	exit(1);
       }
       break;
 
     case 'a': // anchor information 
-      if ((anchor_sym = strsep(&optarg, ",")) == NULL) {
-	fprintf(stderr, "%s: -a: anchor symbol required as argument.\n", argv[0]);
-	exit(1);
-      }
-      if (optarg == NULL || optarg[0] == '\0') {
-	fprintf(stderr, "%s: -a: anchor address required as argument.\n", argv[0]);
-	exit(1);
-      }
-      anchor_addr = strtoul(optarg, &endptr, 16);
-      if (endptr[0] != '\0') {
-	fprintf(stderr, "%s: -a: invalid anchor address `%s'.\n", argv[0], optarg);
+      if (config_anchor(optarg, &anchor_sym, &anchor_addr) < 0) {
 	exit(1);
       }
       break;
 
     case 's': // path to symbol table
-      libc_sym_path = optarg;
+      if (config_libc_syms(optarg, &libc_sym_path) < 0) {
+	exit(1);
+      }
       break;
+
+    case 'c': // path to config file
+      {
+	struct config_params params = {&origin, &padding, &padding_val,
+				       &anchor_sym, &anchor_addr, &libc_sym_path};
+	if (config_file(optarg, &params) < 0) {
+	  exit(1);
+	}
+	break;
+      }
 
     case 'd': // debug flag
       debug = 1;
@@ -129,7 +126,7 @@ int main(int argc, char *argv[]) {
 
   /* open libc symtab file and initialize libc symbol table */
   if ((libc_sym_file = fopen(libc_sym_path, "r")) == NULL) {
-    perror("fopen");
+    fprintf(stderr, "%s: fopen(%s): %s\n", argv[0], libc_sym_path, strerror(errno));
     exit_status = 3;
     goto cleanup;
   }
