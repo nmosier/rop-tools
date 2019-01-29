@@ -71,6 +71,7 @@ NUMBER_HEX	       "-"?0x[[:xdigit:]]+
 "#"+\n                        { return NEWSEG; }
 ":"                           { return LABEL; }
 "&"                           { return ADDR; }
+"$"                           { return PC; }
 
          /* keywords */
 ret			      { return RET; }

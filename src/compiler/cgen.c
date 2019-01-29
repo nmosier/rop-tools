@@ -258,7 +258,12 @@ uint64_t compute_expression(const struct expression *expr,
     return compute_symbol(expr->sym, env, pass);
 
   case EXPRESSION_ADDR:
-    return env->libc_base + compute_expression(expr->offset, env, pass);
+    return env->libc_base
+      + compute_expression(expr->offset, env, pass);
+
+  case EXPRESSION_PC:
+    assert(pass != PASS1); // program counter not set in pass 1
+    return *env->pc;
 
   default:
     assert(0);

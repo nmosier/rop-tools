@@ -13,14 +13,16 @@ struct srcinfo {
 
 /* AST nodes */
 
+enum expression_kind {EXPRESSION_EXT,
+		      EXPRESSION_ID,
+		      EXPRESSION_INT,
+		      EXPRESSION_PLUS,
+		      EXPRESSION_MINUS,
+		      EXPRESSION_ADDR,
+		      EXPRESSION_PC};
+
 struct expression {
-  enum expression_kind {EXPRESSION_EXT,
-			EXPRESSION_ID,
-			EXPRESSION_INT,
-			EXPRESSION_PLUS,
-		        EXPRESSION_MINUS,
-			EXPRESSION_ADDR}
-    kind; /* in case of binop, kind = binop token */
+  enum expression_kind kind;
   union {
     struct {
       struct expression *lhs;

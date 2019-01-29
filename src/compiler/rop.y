@@ -55,7 +55,7 @@
 %token LABEL
 %token NEWSEG
 %token ADDR
-
+%token PC
 
 /* non-terminals */
 %type <expression> expression
@@ -83,6 +83,7 @@
 /* precedenance declarations */
 %left PLUS
 %left MINUS
+%nonassoc ADDR
 
 %%
 	/* grammar rules */
@@ -109,6 +110,7 @@ expression:
       $$.kind = EXPRESSION_ADDR;
       $$.offset = memdup(&$2);
     }
+  | PC { $$.kind = EXPRESSION_PC; }
 
 argument:
   IMM64 { $$.kind = ARGUMENT_IMM64; }

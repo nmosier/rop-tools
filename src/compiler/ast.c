@@ -93,6 +93,8 @@ const char *expression_kind2str(enum expression_kind kind) {
   case EXPRESSION_INT: return "EXPRESSION_INT";
   case EXPRESSION_PLUS: return "EXPRESSION_PLUS";
   case EXPRESSION_MINUS: return "EXPRESSION_MINUS";
+  case EXPRESSION_ADDR: return "EXPRESSION_ADDR";
+  case EXPRESSION_PC: return "EXPRESSION_PC";
   default: return NULL;
   }
 }
