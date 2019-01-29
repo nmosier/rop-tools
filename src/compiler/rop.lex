@@ -55,7 +55,7 @@ NUMBER_HEX	       "-"?0x[[:xdigit:]]+
 
 
 	/* regs */
-"r"([abcd]"x"|[sd]"i"|[0-9]+|"bp") {
+"r"([abcd]"x"|[sd]"i"|[0-9]+|[sb]"p") {
   struct symbol *regsym = symtab_put_bare(yytext, &rop_symtab);
   regsym->kind = SYMBOL_REG;
   yylval.symbol = regsym; return REG;
