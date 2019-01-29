@@ -21,17 +21,18 @@ struct expressions {
 void expressions_init(struct expressions *exprs);
 int expressions_add(struct expression *expr, struct expressions *exprs);
 
-
 struct environment {
   uint64_t *pc;
-  struct expression *imm64; // NULL if not bound
+  struct expression *imm64;
   const struct libc_syms *libc_syms;
   uint64_t libc_base;
 };
 
-
+/* argument & expresion binding */
 struct expression *environment_bindarg(struct argument *arg,
 				       const struct environment *env);
+void expression_bindpc(struct expression *expr, const struct environment *env);
+
 void environment_init(struct environment *env, uint64_t *pc,
 		      uint64_t libc_base, const struct libc_syms *libc_syms);
 void environment_construct(struct environment *newenv,

@@ -19,14 +19,49 @@
 
 /* bind_argument: binds argument to expression; returns pointer to expression upon
  * success, NULL if argument cannot be bound (e.g. is of kind ARGUMENT_REG)*/
+/* also replaces `$' (PC) with actual value */
 struct expression *environment_bindarg(struct argument *arg,
 				       const struct environment *env) {
   switch (arg->kind) {
-  case ARGUMENT_IMM64: return env->imm64;
-  case ARGUMENT_EXPR:  return &arg->expr;
-  case ARGUMENT_MEM:         return NULL;
-  case ARGUMENT_REG:         return NULL;
-  default:                     assert(0);
+  case ARGUMENT_IMM64:
+    return env->imm64;
+    
+  case ARGUMENT_EXPR:
+    expression_bindpc(&arg->expr, env);
+    return &arg->expr;
+    
+  case ARGUMENT_MEM:
+    return NULL;
+    
+  case ARGUMENT_REG:
+    return NULL;
+    
+  default:
+    abort();
+  }
+}
+
+void expression_bindpc(struct expression *expr, const struct environment *env) {
+  switch (expr->kind) {
+  case EXPRESSION_INT:
+  case EXPRESSION_EXT:
+  case EXPRESSION_ID:
+  case EXPRESSION_ADDR:
+    break;
+    
+  case EXPRESSION_PLUS:
+  case EXPRESSION_MINUS:
+    expression_bindpc(expr->lhs, env);
+    expression_bindpc(expr->rhs, env);
+    break;
+    
+  case EXPRESSION_PC: // emplace current PC value
+    expr->kind = EXPRESSION_INT;
+    expr->num = *env->pc;
+    break;
+    
+  default:
+    abort();
   }
 }
 
@@ -39,6 +74,7 @@ void environment_init(struct environment *env, uint64_t *pc,
 }
 
 /* environment_construct: construct in context of rule reference */
+// note: only called during pass 1
 void environment_construct(struct environment *newenv,
 			   const struct environment *curenv,
 			   struct arguments *def_args, struct arguments *ref_args) {
@@ -262,7 +298,7 @@ uint64_t compute_expression(const struct expression *expr,
       + compute_expression(expr->offset, env, pass);
 
   case EXPRESSION_PC:
-    assert(pass != PASS1); // program counter not set in pass 1
+    assert(pass == PASS1); // pc is only updated/valid in pass 1
     return *env->pc;
 
   default:
