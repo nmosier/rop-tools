@@ -1,0 +1,4 @@
+TEST :=
+  MOV rax,[rdx]
+
+#

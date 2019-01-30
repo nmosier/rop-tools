@@ -1,0 +1,91 @@
+### Stack Gadgets ###
+Gadgets for manipulating the (simulated) stack
+
+(loading from stack)
+0x2f321:
+8b 44 fa 40     mov     eax, dword ptr [rdx + 8*rdi + 64]
+c3      ret
+Notes:
+ - rdi is base register.
+ - edx is offset register.
+ 
+
+
+
+(storing to stack)
+0x164ab4:
+36      ss
+66      data16
+89 4c 17 fe     mov     dword ptr [rdi + rdx - 2], ecx
+66      data16
+89 37   mov     dword ptr [rdi], esi
+c3      ret
+Notes:
+ - rdi is base register.
+ - edx is offset register.
+
+(fetch stack pointer)
+0x12fe73:
+fa      cli
+8b 47 28        mov     eax, dword ptr [rdi + 40]
+c3      ret
+
+
+
+0xf1d29:
+77 34   ja      52
+8b 7    mov     eax, dword ptr [rdi]
+85 f6   test    esi, esi
+75 db   jne     -37
+d 0 0 0 80      or      eax, 2147483648
+89 7    mov     dword ptr [rdi], eax
+31 c0   xor     eax, eax
+c3      ret
+
+
+
+#####################
+#####################
+#####################
+
+
+;; destroys: %rdi
+;; returns: %eax
+SP_FETCH :=
+	MOV %rdi,(STACK_POINTER - 40)
+	ret 0x12fe73 + 1
+
+;; inputs: %eax
+;; destroys: %rax, %rdi
+SP_SAVE := 
+	MOV %rdi,STACK_POINTER
+	ret 0xf1d29 + 13
+	
+;; destroys: (none)
+;; returns: %eax
+SP_INC := 
+       ADD %eax,2
+       ADD %eax,2
+
+;; destroys: (none)
+;; returns: %eax
+SP_DEC :=
+       DEC %eax
+       DEC %eax
+       DEC %eax
+       DEC %eax
+
+;; destroys: %rdx, %rax
+PUSH imm32 :=
+     	SP_FETCH
+	SP_DEC
+	MOV %edx,%eax
+	MOV %rdi,STACK_BASE
+	MOV %rcx,imm32
+	MOV %eax,%ecx
+	;; TO BE CONTINUED ;;
+	
+
+
+
+;; edx is the offset register

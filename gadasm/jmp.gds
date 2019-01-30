@@ -1,0 +1,68 @@
+/* jmp.gds
+ * Nicholas Mosier 2019
+ */
+
+MOV rsp,rdx :=
+    ret &0x4d850
+
+MOV rsp,rax :=
+    MOV rdx,rax
+    MOV rsp,rdx
+
+MOV rsp,imm64 :=
+    ret &0x16c50b ; pop rsp
+    dq imm64
+
+
+/* language opcodes */
+
+// indirect jump
+JMP :=
+    MOV rsp,rax ; jmp rax
+
+// direct jump
+JMP imm64 :=
+    MOV rsp,imm64
+
+// conditional jumps
+// note: should not modify flags
+JEQ imm64 :=
+    MOV r9,rax      ; 4 preserve ACC
+    MOV rax, $ + 72 ; 2
+    MOV rdx,imm64   ; 2
+    CMOVE rax,rdx   ; 1
+    MOV rdx,rax     ; 1
+    MOV rax,r9      ; 2
+    MOV rsp,rdx     ; 1 indirect jump
+
+JNE imm64 :=
+    MOV r9,rax
+    MOV rax,imm64
+    MOV rdx, $ + 56 ; 2
+    CMOVE rax,rdx   ; 1
+    MOV rdx,rax     ; 1
+    MOV rax,r9      ; 2
+    MOV rsp,rdx     ; 1
+
+JLT imm64 :=
+    MOV r9,rax
+    MOV rax, $ + 72 ; 2
+    MOV rdi,imm64   ; 2
+    CMOVB rax,rdi   ; 1
+    MOV rdx,rax     ; 1
+    MOV rax,r9      ; 2
+    MOV rsp,rdx     ; 1
+
+JGT imm64 :=
+    MOV r9,rax
+    MOV rdx, $ + 64 ; 2
+    MOV rax,imm64   ; 2
+    CMOVG rdx,rax   ; 1
+    MOV rax,r9      ; 2
+    MOV rsp,rdx     ; 1
+
+// ???
+HCF :=
+    ret &0x58594
+
+#

@@ -1,0 +1,27 @@
+/* jmp.gds
+ * Nicholas Mosier 2019
+ */
+
+MOV rsp,rdx :=
+    ret &0x4d850
+
+MOV rsp,rax :=
+    MOV rdx,rax
+    MOV rsp,rdx
+
+MOV rsp,imm64 :=
+    ret &0x16c50b ; pop rsp
+    dq imm64
+
+
+/* language opcodes */
+
+// indirect jump
+JMP :=
+    MOV rsp,rax ; jmp rax
+
+// direct jump
+JMP imm64 :=
+    MOV rsp,imm64
+
+#

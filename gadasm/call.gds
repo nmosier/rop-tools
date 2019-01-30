@@ -1,0 +1,12 @@
+
+0xfb9af:
+8b 5 eb 23 c 0  mov     eax, dword ptr [rip + 795627]
+48 f 45 ea      cmovne  rbp, rdx
+48 89 28        mov     qword ptr [rax], rbp
+48 8b 5 c5 23 c 0       mov     rax, qword ptr [rip + 795589]
+48 8b 13        mov     rdx, qword ptr [rbx]
+48 89 10        mov     qword ptr [rax], rdx
+48 83 c4 8      add     rsp, 8
+5b      pop     rbx
+5d      pop     rbp
+c3      ret

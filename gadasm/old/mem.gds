@@ -1,0 +1,11 @@
+STACK_ADDR := 0x100000000
+HEAP_ADDR := 0x200000000
+REGF_ADDR := 0x300000000
+
+MMAP_STACK :=
+	   rdi
+	   rsi
+	   rdx
+	   r10
+	   r8
+	   r9

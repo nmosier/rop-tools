@@ -1,0 +1,20 @@
+/* cmp.gds
+ * Nicholas Mosier 2019
+ */
+
+CMP imm64 :=
+    MOV rcx,rax
+    MOV rdx,imm64
+    SUB rax,rdx
+    MOV rax,rcx
+
+CMP :=
+    MOV rcx,rax ; preserve ACC; destroys rax
+    MOV rax,rbp ; destroys rbx,r9,r12
+    MOV rax,[rax] ; perfect!
+    MOV rdx,rax
+    MOV rax,rcx
+    SUB rax,rdx ; all comparison flags are set
+    MOV rax,rcx ; restore ACC
+
+#

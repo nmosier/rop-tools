@@ -1,0 +1,9 @@
+BREAK :=
+      MOV rdx,&0x484ba
+      ret &0x484ba
+
+#
+
+START:
+	JMP START
+	dq -1

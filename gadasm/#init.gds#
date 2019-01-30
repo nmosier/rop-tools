@@ -1,0 +1,67 @@
+/* init.gds
+ * initial setup routines
+ */
+
+/* constants */
+STACK_SIZE := 0x1000
+
+/* code */
+INIT :=
+  INIT_STACK
+
+INIT_STACK imm64 :=
+  MOV rdi,imm64       ; set malloc params
+  ret <__libc_malloc> ; call malloc
+  ADD rax,STACK_SIZE  ; rax points to end of stack
+  MOV rbp,rax         ; move returned result into frame ptr
+      		      ; note that stack is intialized to being empty  
+
+
+
+
+NOTE!!!
+359289:4c 89 cd 	mov	rbp, r9
+359290-ff e2 	jmp	rdx
+359291-66 90 	nop
+359292-f3 f 1e fa 	endbr64
+359293-48 81 ff ff 3 0 0 	cmp	rdi, 1023
+359294-77 8 	ja	8
+359295-48 89 f8 	mov	rax, rdi
+359296-48 c1 f8 6 	sar	rax, 6
+359297-c3 	ret
+359298-
+359299-0x10d328:
+
+-> this can allow you to mov to rbp. But how to inc/dec?
+
+;; move rbp to rax
+6814:48 89 e8 	mov	rax, rbp
+6815-5b 	pop	rbx
+6816-5d 	pop	rbp
+6817-c3 	ret
+
+;; move rax to r9
+113557:49 89 c1 	mov	r9, rax
+113558-41 5c 	pop	r12
+113559-41 5d 	pop	r13
+113560-4c 89 c8 	mov	rax, r9
+113561-41 5e 	pop	r14
+113562-c3 	ret
+
+;; move r9 to rbp (above)
+
+;; so the circuit is complete!
+;; as long as we can do math on rax or r9, we are golden.
+
+
+
+;; "RETURN ADDRESS" of function calls =>
+;; pop rbp \ ret \ pop rsp \ ret 
+
+
+0x109bad:
+dd 5b b8        fstp    qword ptr [rbx - 72]
+5 0 0 0 41      add     eax, 1090519040
+5c      pop     rsp
+5d      pop     rbp
+c3      ret

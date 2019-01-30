@@ -1,0 +1,26 @@
+/* stack.gds  */
+
+/* INVARIANTS
+  - SP points to the bottom entry in the stack
+*/
+
+// destroys rbx,rcx,rdx,rdi,r9,r12,r13,r14
+PUSH :=
+     MOV rcx,rax ; preserve ACC; destroys rax
+     MOV rax,rbp ; destroys rbx,r9,r12
+     ADD rax,-8  ; dec SP; destroys rdi
+     MOV rdx,rax
+     MOV [rdx],rcx ; move ACC into SP
+     MOV rbp,rax ; destroys rdx,r9,r12,r13,r14
+     MOV rax,rcx ; restore ACC
+
+// destroys rbx,rcx,rdx,rdi,r9,r12,r13,r14
+POP :=
+    MOV rax,rbp ; destroys rbx,r9,r12
+    MOV rdx,rax ; rdx <- rbp
+    MOV rax,[rdx] ; destroys [rdx]
+    MOV rcx,rax ; preserve ACC; destroys rax
+    MOV rax,rdx 
+    ADD rax,8   ; destroys rdi
+    MOV rbp,rax ; destroys rdx,r9,r12,r13,r14
+    MOV rax,rcx ; restore ACC

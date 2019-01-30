@@ -1,0 +1,72 @@
+/* mov.gds
+ * move instructions
+ */
+
+
+/* moving immediates */
+MOV rdi,imm64 :=
+    ret 0x16a03f
+    dq imm64
+
+MOV rdx,imm64 :=
+    ret 
+
+/* moving registers */
+
+// destroys r12,r13,r14
+MOV r9,rax :=
+    ret 0x598db + 5
+    resq 3
+
+// destroys rdx
+MOV rbp,r9 :=
+    MOV rdx,0x10d313 + 33  ; gadget contains jmp rdx
+    ret 0x10d313 + 6
+
+// destroys rdx,r9,r12,r13,r14
+MOV rbp,rax :=
+    MOV r9,rax
+    MOV rbp,r9
+
+// destroys rbx,r9,r12
+MOV rax,rbp :=
+    ret 0x30e95 + 1
+    resq 2
+    MOV rbp,rax ; so that rbp isn't destroyed
+
+MOV rdx,rax :=
+    ret 0x119227
+
+MOV rax,rdx :=
+    ret 0x164f53
+
+MOV rax,rcx :=
+    ret 0x10b7bf + 3
+
+// destroys rax
+MOV rcx,rax :=
+    MOV rcx,0
+    ret 0x36b4b + 4
+    
+
+/* loads & stores */
+
+// destroys rax,rcx
+MOV [rdx],rax :=
+    ret 0x904c1 + 7
+
+MOV [rdx],rcx :=
+    ret 0x904c1 + 12
+
+// destroys [rdx]
+MOV rax,[rdx] :=
+    ret 0xdfd96 + 5
+
+#####################
+MOV rax,rbx?
+0x8cde7:
+85 c0   test    eax, eax
+48 89 d8        mov     rax, rbx
+5b      pop     rbx
+48 f 45 c7      cmovne  rax, rdi
+c3      ret

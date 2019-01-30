@@ -1,0 +1,20 @@
+/* init.gds
+ * initial setup routines
+ */
+
+/* constants */
+STACK_SIZE := 0x1000
+
+/* code */
+INIT :=
+  INIT_STACK STACK_SIZE
+
+INIT_STACK imm64 :=
+  MOV rdi,imm64       ; set malloc params
+  ret <malloc> ; call malloc
+  ADD rax,imm64       ; rax points to end of stack
+  MOV rbp,rax         ; move returned result into frame ptr
+; note that stack is intialized to being empty
+
+#
+

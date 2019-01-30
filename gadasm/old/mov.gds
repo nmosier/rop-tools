@@ -1,0 +1,55 @@
+0x126944:
+b eb    or      ebp, ebx
+23 f    and     ecx, dword ptr [rdi]
+b1 35   mov     cl, 53
+5a      pop     rdx
+c3      ret
+
+0x111ae3:
+59      pop     rcx
+c3      ret
+
+0x11873e:
+0 0     add     byte ptr [rax], al
+89 c8   mov     eax, ecx
+c3      ret
+
+0x119228:
+89 c2   mov     edx, eax
+c3      ret
+
+0xb5ed5:
+2c 75   sub     al, 117
+58      pop     rax
+c3      ret
+
+#########################
+#########################
+#########################
+
+;; destroys: (none)
+;; returns: %rdx
+MOV %rdx,imm64 :=
+    ret 0x126944 + 6
+    dq imm64
+    
+;; destroys: (none)
+;; returns: %rcx
+MOV %rcx,imm64 :=
+    ret 0x111ae3
+    dq imm64
+
+;; destroys: (none)
+;; returns: %eax
+MOV %eax,%ecx :=
+    ret 0x11873e + 2
+
+;; destroys: (none)
+;; returns: %edx
+MOV %edx,%eax
+    ret 0x119228
+
+;; destroys: (none)
+;; returns: %eax
+MOV %eax,imm64 :=
+    ret 0xb5ed5 + 2

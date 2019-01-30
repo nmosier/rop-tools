@@ -1,0 +1,27 @@
+0x10178e:
+5c      pop     rsp
+89 d0   mov     eax, edx
+c3      ret
+
+0x7923c:
+50      push    rax
+1 48 89         add     dword ptr [rax - 119], ecx
+53      push    rbx
+8 f     or      byte ptr [rdi], cl
+b6 10   mov     dh, 16
+5b      pop     rbx
+89 d0   mov     eax, edx
+c3      ret
+
+0x126953: (?????)
+51      push    rcx
+c3      ret
+
+
+###########################################
+###########################################
+###########################################
+
+;; destroys: %eax
+JMP imm64 := ret 0x10178e
+

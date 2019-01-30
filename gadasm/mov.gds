@@ -1,0 +1,109 @@
+/* mov.gds
+ * move instructions
+ */
+
+
+/* moving immediates */
+MOV rdi,imm64 :=
+    ret &0x16a03f
+    dq imm64
+
+MOV rax,imm64 :=
+    ret &0xfd9f8
+    dq imm64
+
+MOV rbx,imm64 :=
+    ret &0x16c6a6
+    dq imm64
+
+MOV rcx,imm64 :=
+    ret &0x111ae3
+    dq imm64
+
+MOV rdx,imm64 :=
+    ret &0x12694a
+    dq imm64
+
+/* moving registers */
+
+// destroys r12,r13,r14
+MOV r9,rax :=
+    ret &0x598db + 5
+    resq 3
+
+// destroys r14
+MOV rax,r9 :=
+    ret &0x598d8 + 15
+    resq 1
+
+// destroys rdx
+MOV rbp,r9 :=
+    MOV rdx,&0x10d313 + 33  ; gadget contains jmp rdx
+    ret &0x10d313 + 6
+
+// destroys rdx,r9,r12,r13,r14
+MOV rbp,rax :=
+    MOV r9,rax
+    MOV rbp,r9
+
+// destroys rbx,r9,r12
+MOV rax,rbp :=
+    ret &0x30e95 + 1
+    resq 2
+    MOV rbp,rax ; so that rbp isn't destroyed
+
+MOV rdx,rax :=
+    ret &0x119227
+
+MOV rax,rdx :=
+    ret &0x164f53
+
+MOV rax,rcx :=
+    ret &0x10b7bf + 3
+
+// destroys rax
+MOV rcx,rax :=
+    MOV rcx,0
+    ret &0x36b4b + 4
+
+MOV rax,rdi :=
+    ret &0x154eee
+
+/* loads & stores */
+
+// destroys rax,rcx
+MOV [rdx],rax :=
+    ret &0x904c1 + 7
+
+MOV [rdx],rcx :=
+    ret &0x904c1 + 12
+
+// destroys [rdx]
+MOV rax,[rdx] :=
+    ret &0xdfd96 + 5
+
+MOV rax,[rax] :=
+    ret &0x11cfec
+
+/* conditional moves */
+CMOVE rax,rdx :=
+      ret &0x10a684
+
+CMOVE rax,rdi :=
+      ret &0x8cded
+
+CMOVB rax,rdi :=
+      ret &0x4d77a
+
+// destroys rax
+CMOVG rdx,rax :=
+      ret &0xb72a1
+
+//////////////////////////////////////////////
+
+/* user rules */
+MOV imm64 :=
+    MOV rax,imm64
+
+#
+

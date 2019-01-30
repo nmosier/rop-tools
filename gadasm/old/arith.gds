@@ -1,0 +1,19 @@
+0xb69b8:
+83 c0 2         add     eax, 2
+c3      ret
+
+0x11f620:
+5e      pop     rsi
+83 e8 1         sub     eax, 1
+c3      ret
+
+################################
+################################
+
+;; destroys: (none)
+;; returns: %eax
+ADD %eax,2 :=
+    ret 0xb69b8
+
+DEC %eax :=
+    ret 0x11f620 + 1

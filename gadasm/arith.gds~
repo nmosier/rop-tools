@@ -1,0 +1,59 @@
+/* arith.gds
+ * gadgets for performing arithmetic
+ */
+
+/* internal rules */
+
+ADD rax,rdi :=
+    ret 0x15bbc3 + 3
+
+// destroys rdi
+ADD rax,imm64 :=
+    MOV rdi,imm64
+    MOV rax,rdi
+
+// destroys rax,rdi,r9
+ADD rbp,imm64 :=
+    MOV rax,rbp
+    ADD rax,imm64
+    MOV rbp,rax
+
+ADD rax,rcx :=
+    ret 0xb60fa
+
+/* sub */
+SUB rax,rdx :=
+    ret 0xa39e3
+
+/* and */
+// destroyed: xmm0
+AND rax,rdx :=
+    ret 0x36c5a
+
+
+/* user rules */
+
+// ADD: add stack val to ACC
+ADD :=
+    MOV rcx,rax ; preserve ACC; destroys rax
+    MOV rax,rbp ; destroys rbx,r9,r12
+    MOV rdx,rax ; rdx <- rbp
+    MOV rax,[rdx] ; destroys [rdx]
+    ADD rax,rcx ; add
+    MOV rcx,rax ; preserve ACC; destroys rax
+    MOV rax,rdx 
+    ADD rax,8   ; destroys rdi
+    MOV rbp,rax ; destroys rdx,r9,r12,r13,r14
+    MOV rax,rcx ; restore ACC
+
+// negate ACC
+NEG :=
+    MOV rdx,rax
+    MOV rax,0
+    SUB rax,rdx
+
+// subtract stack val from ACC
+SUB :=
+    NEG
+    ADD
+    NEG

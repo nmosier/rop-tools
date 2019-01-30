@@ -1,0 +1,21 @@
+0x36b4b:
+f ba f0 3f      btr     eax, 63
+48 31 c1        xor     rcx, rax
+48 89 c8        mov     rax, rcx
+48 f7 d8        neg     rax
+48 9 c8         or      rax, rcx
+48 c1 f8 3f     sar     rax, 63
+f7 d0   not     eax
+21 d0   and     eax, edx
+c3      ret
+
+
+0x10b7bf:
+0 31    add     byte ptr [rcx], dh
+c9      leave
+48 89 c8        mov     rax, rcx
+c3      ret
+
+
+
+
