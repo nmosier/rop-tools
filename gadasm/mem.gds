@@ -1,11 +1,35 @@
-STACK_ADDR := 0x100000000
-HEAP_ADDR := 0x200000000
-REGF_ADDR := 0x300000000
+/* mem.gds
+ * Nicholas Mosier 2019
+ */
 
-MMAP_STACK :=
-	   rdi
-	   rsi
-	   rdx
-	   r10
-	   r8
-	   r9
+// load 64-bit value from [ACC] into [SP + imm64]
+// note: miraculously preserves ACC
+LD imm64 :=
+   MOV rcx,rax
+   MOV rax,rbp
+   ADD rax,imm64
+   MOV rdx,rax
+   MOV rax,rcx
+   MOV r9,rax    ; preserve ACC (address)
+   MOV rax,[rax]
+   MOV rcx,rax
+   MOV [rdx],rcx
+   MOV rax,r9    ; restore ACC (address)
+
+// store 64-bit value from [SP + imm64] into [ACC]
+// note: preserves rax, miraculously
+STO imm64 :=
+    MOV rcx,rax
+    MOV rax,rbp
+    ADD rax,imm64
+    MOV rax,[rax] ; rax <- [rbp + imm64]
+    MOV rdx,rax   ; preserve data in rdx
+    MOV rax,rcx   ; rax now contains original ACC
+    MOV r9,rax    ; preserve ACC in r9
+    MOV rax,rdx   ; restore data from rdx
+    MOV rcx,rax   ; move data into rcx
+    MOV rax,r9    ; restore ACC from r9
+    MOV rdx,rax   ; move ACC (address) into rdx
+    MOV [rdx],rcx ; store data (FINALLY)
+
+#

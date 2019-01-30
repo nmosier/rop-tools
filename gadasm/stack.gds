@@ -29,5 +29,39 @@ PEEK :=
      MOV rax,rbp ; destroys rbx,r9,r12
      MOV rax,[rax]
 
+// fetches 64-bit value at [SP + imm64] to ACC
+GET imm64 :=
+    MOV rax,rbp
+    ADD rax,imm64
+    MOV rax,[rax]
+
+// writes 64-bit value in ACC to [SP + imm64]
+PUT imm64 :=
+    MOV rcx,rax   ; preserve ACC
+    MOV rax,rbp
+    ADD rax,imm64
+    MOV rdx,rax
+    MOV [rdx],rcx
+    MOV rax,rcx   ; restore ACC
+
+// subtracts imm64 from SP
+ALLOC imm64 :=
+    MOV rax,rbp
+    MOV rdx,imm64
+    SUB rax,rdx
+    MOV rbp,rax
+
+// adds imm64 to SP
+LEAVE imm64 :=
+    MOV rcx,rax   ; preserve ACC
+    MOV rax,rbp   ; 
+    ADD rax,imm64 ;
+    MOV rbp,rax
+    MOV rax,rcx   ; restore ACC
+
+// move SP into ACC
+LEA imm64 :=
+    MOV rax,rbp
+    ADD rax,imm64
 
 #
