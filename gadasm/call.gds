@@ -30,7 +30,7 @@ RET :=
     MOV rdx,rax
     ADD rax,8
     MOV r9,rax  ; preserve new SP
-    MOV rax,[rdx]
+    MOV rax,[rdx] ; destroys [rdx], but doesn't matter since thats the R.A.
     MOV rbp,r9  ; restore new SP
     MOV rdx,rax
     MOV rax,rcx ; restore ACC
@@ -47,13 +47,14 @@ SYSCALL3 :=
   MOV rax,[rax] ; load arg2
   MOV rsi,rax   ; destroys rdi / arg2 in place
   MOV rax,rbp   ; destroys rbx,rdx,r9,r12,r13,r14
-  ADD rax,8     ; destroys rdi / index of arg3
+  ADD rax,16    ; destroys rdi / index of arg3
   MOV r9,rax    ; destroys r12,r13,r14
-  ADD rax,-8    ; destroys rdi / index of arg1
+  ADD rax,-16   ; destroys rdi / index of arg1
   MOV rax,[rax] ; load arg1
   MOV rdx,rax   ;
   MOV rdi,rdx   ; destroys rax / arg1,arg2 in place
   MOV rax,r9    ; destroys r14
+  MOV rax,[rax] ; fetch arg3
   MOV rdx,rax   ; arg1,arg2,arg3 in place
   MOV rax,rcx   ; restore ACC (which is the syscall number)
   ret &0x11724b ; perform syscall

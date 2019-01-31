@@ -46,6 +46,14 @@ ADD :=
     MOV rbp,rax ; destroys rdx,r9,r12,r13,r14
     MOV rax,rcx ; restore ACC
 
+// ACC <- ACC + [SP + imm64]
+ADDFROM imm64 :=
+  MOV rcx,rax ; preserve ACC
+  MOV rax,rbp ; destroys rbx,r9,r12
+  ADD rax,imm64 ; destroys rdi / address of addend
+  MOV rax,[rax] ; rax = addend
+  ADD rax,rcx  ; rax = rax + rcx
+
 // negate ACC
 NEG :=
     MOV rdx,rax

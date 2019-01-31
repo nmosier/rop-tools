@@ -1,0 +1,59 @@
+:: ROPC INSTRUCTION SET REFERENCE ::
+::     Nicholas Mosier 2019       ::
+
+Instruction types:
+ * Stack manipulation
+ * Memory access
+ * Arithmetic
+ * Comparison
+ * Branching
+ * Calls
+
+Registers:
+ * ACC   -- the accumulator. ACC is an implied operand in many instructions.
+ * SP    -- the stack pointer. (No relation to x86_64's %rsp.) Never directly
+            specified in an instruction, only implied.
+ * PC    -- the program counter. (No relation to x86_64's %rip.) Never directly
+            specified in an instruction, only implied.
+ All registers are 64-bit.
+
+Flags:
+ There are two flags: ZF (zero flag) and CF (carry flag). They are set/reset by a
+ CMP instruction. Most instructions unpredictably destroy these flags, so a CMP
+ instruction should directly precede the instruction which depends on it (JEQ, e.g.).
+
+### STACK MANIPULATION ###
+PUSH
+PUSH imm64
+POP
+POP imm64
+PEEK
+GET imm64
+PUT imm64
+LEA imm64
+ALLOC
+LEAVE
+
+######### MEMORY #########
+LD imm64  -- load 64-bit value from [ACC] into [SP + imm64]. Preserves ACC.
+STO imm64 -- load 64-bit valeu from [SP + imm64] into [ACC]. Preserves ACC.
+
+####### ARITHMETIC #######
+ADD           -- pop value off stack and add to ACC.
+	         (ACC <- ACC + [SP], SP <- SP + 8)
+ADDFROM imm64 -- add value at stack index imm64 to ACC. (ACC <- ACC + [SP + imm64])
+	         Preserves [SP + imm64].
+SUB           -- pop value off stack and subtract from ACC.
+	         (ACC <- ACC - [SP], SP <- SP + 8)
+
+####### COMPARISON #######
+CMP       -- compare ACC to top of stack. Flags are set according to the comparison
+	     `ACC - [SP]'. (ZF set iff ACC == [SP]; CF set iff ACC < [SP]).
+	     Preserves ACC and [SP].
+CMP imm64 -- compare ACC to value at stack index imm64. Flags are set according to
+    	     the comparison `ACC - [SP + imm64]', similarly to `CMP'.
+
+####### BRANCHING ########
+######### CALLS ##########
+
+

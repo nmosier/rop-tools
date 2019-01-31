@@ -104,7 +104,9 @@ expression:
     $$.rhs = memdup(&$3);
   }
   | expression MINUS expression {
-      $$.kind = EXPRESSION_MINUS; $$.lhs = &($1); $$.rhs = &($3);
+      $$.kind = EXPRESSION_MINUS;
+      $$.lhs = memdup(&$1);
+      $$.rhs = memdup(&$3);
     }
   | ADDR expression {
       $$.kind = EXPRESSION_ADDR;
