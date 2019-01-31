@@ -1,7 +1,7 @@
 /* stack.gds  */
 
 /* INVARIANTS
-  - SP points to the bottom entry in the stack
+  - SP points to the top (bottom?) entry in the stack
 */
 
 // destroys rbx,rcx,rdx,rdi,r9,r12,r13,r14
@@ -13,6 +13,16 @@ PUSH :=
      MOV [rdx],rcx ; move ACC into SP
      MOV rbp,rax ; destroys rdx,r9,r12,r13,r14
      MOV rax,rcx ; restore ACC
+
+PUSH imm64 :=
+     MOV rcx,rax   ; 3  preserve ACC
+     MOV rax,rbp   ; 10
+     ADD rax,-8    ; 3  dec SP
+     MOV rdx,rax   ; 1
+     MOV rdi,imm64 ; 2
+     MOV [rdx],rdi ; 1 store on top of stack
+     MOV rbp,rax   ; 7 update SP
+     MOV rax,rcx   ; 1  restore ACC
 
 // destroys rbx,rcx,rdx,rdi,r9,r12,r13,r14
 POP :=

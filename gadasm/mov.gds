@@ -8,6 +8,10 @@ MOV rdi,imm64 :=
     ret &0x16a03f
     dq imm64
 
+MOV rsi,imm64 :=
+    ret &0x16b5b0
+    dq imm64
+
 MOV rax,imm64 :=
     ret &0xfd9f8
     dq imm64
@@ -69,6 +73,11 @@ MOV rcx,rax :=
 MOV rax,rdi :=
     ret &0x154eee
 
+// destroys rax
+MOV rdi,rdx :=
+    MOV rax, &0x109232 + 14
+    ret &0x109232
+
 /* loads & stores */
 
 // destroys rax,rcx
@@ -87,6 +96,9 @@ MOV [rax],rdx :=
 
 MOV rax,[rax] :=
     ret &0x11cfec
+
+MOV [rdx],rdi :=
+    ret &0xdfd9e
 
 /* conditional moves */
 CMOVE rax,rdx :=
