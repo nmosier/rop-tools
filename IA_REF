@@ -2,6 +2,7 @@
 ::     Nicholas Mosier 2019       ::
 
 Instruction types:
+ * Move
  * Stack manipulation
  * Memory access
  * Arithmetic
@@ -22,21 +23,27 @@ Flags:
  CMP instruction. Most instructions unpredictably destroy these flags, so a CMP
  instruction should directly precede the instruction which depends on it (JEQ, e.g.).
 
+########## MOVE ##########
+MOV imm64 -- move imm64 into ACC. (ACC <- imm64)
+
 ### STACK MANIPULATION ###
-PUSH
-PUSH imm64
-POP
-POP imm64
-PEEK
-GET imm64
-PUT imm64
-LEA imm64
-ALLOC
-LEAVE
+PUSH        -- push ACC onto stack. (SP <- SP - 8, [SP] <- ACC). Preserves ACC.
+PUSH imm64  -- push imm64 onto stack. (SP <- SP - 8, [SP] <- imm64). Preserves ACC.
+POP  	    -- pop value off stack into ACC. (ACC <- [SP], SP <- SP + 8).
+PEEK	    -- copy value from top of stack to ACC. (ACC <- [SP]). SP, [SP] unchanged.
+GET imm64   -- load value at stack index imm64 to ACC. (ACC <- [SP + imm64]).
+    	      SP, [SP + imm64] unchanged.
+PUT imm64   -- store ACC into value at stack index imm64. ([SP + imm64] <- ACC).
+    	      SP, [SP + imm64] unchanged.
+LEA imm64   -- load effective address of stack index. (ACC <- SP + imm64).
+ALLOC imm64 -- allocate imm64 bytes on the stack. Must be a multiple of 8. Preserves
+      	       ACC. (SP <- SP - imm64). See related LEAVE instruction.
+LEAVE imm64 -- deallocate imm64 bytes on the stack. Must be a multiple of 8. Preserves
+      	       ACC. (SP <- SP + imm64).	       
 
 ######### MEMORY #########
 LD imm64  -- load 64-bit value from [ACC] into [SP + imm64]. Preserves ACC.
-STO imm64 -- load 64-bit valeu from [SP + imm64] into [ACC]. Preserves ACC.
+STO imm64 -- load 64-bit value from [SP + imm64] into [ACC]. Preserves ACC.
 
 ####### ARITHMETIC #######
 ADD           -- pop value off stack and add to ACC.
@@ -54,6 +61,35 @@ CMP imm64 -- compare ACC to value at stack index imm64. Flags are set according 
     	     the comparison `ACC - [SP + imm64]', similarly to `CMP'.
 
 ####### BRANCHING ########
-######### CALLS ##########
+JMP       -- indirect jump to address specified in ACC. (PC <- ACC)
+	     Preserves ACC.
+JMP imm64 -- direct jump to address. (PC <- imm64)
+JEQ imm64 -- direct jump if equal, i.e. ZF is set. Should directly follow a CMP.
+    	     Preserves ACC.
+JNE imm64 -- direct jump if not equal, i.e. ZF is reset. Should directly follow a
+             CMP. Preserves ACC.
+JLT imm64 -- direct jump if less than, i.e. CF is set. Should directly follow a CMP.
+    	     Preserves ACC.
+JGT imm64 -- direct jump if greater than, i.e. ZF and CF are reset. Should directly
+    	     follow a CMP. Preserves ACC.
 
+######### CALLS ##########
+CALL imm64 -- call procedure at address imm64. It pushes PC onto the stack and jumps
+     	      to [imm64]. This instruction does not implement any calling convention;
+	      that is up to the programmer.
+	      (PC <- imm64, SP <- SP + 8, [SP] <- PC + ?)
+RET        -- return from procedure. Pops address off stack and jumps to it.
+	      (PC <- [SP], SP <- SP + 8)
+SYSCALL3   -- perform three-argument system call. ACC contains the system call number;
+	      the three arguments are contained on the stack, ordered such that the
+	      first argument is at the top of the stack, followed by argument 2 and
+	      then argument 3 (i.e. the address increases with argument number).
+	      (arg1 = [SP], arg2 = [SP+8], arg3 = [SP+16])
+	      
+
+######### OTHER ##########
+INIT -- initialize program. Currently, this instruction only sets up the stack.
+     	Call this instruction before anything else! It is allowed to clobber all
+	registers.
+HCF  -- ???
 

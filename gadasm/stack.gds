@@ -55,11 +55,14 @@ PUT imm64 :=
     MOV rax,rcx   ; restore ACC
 
 // subtracts imm64 from SP
+// preserves rax
 ALLOC imm64 :=
+    MOV rcx,rax
     MOV rax,rbp
     MOV rdx,imm64
     SUB rax,rdx
     MOV rbp,rax
+    MOV rax,rcx
 
 // adds imm64 to SP
 LEAVE imm64 :=

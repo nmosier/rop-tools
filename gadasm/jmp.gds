@@ -5,6 +5,7 @@
 MOV rsp,rdx :=
     ret &0x4d850
 
+// destroys rdx
 MOV rsp,rax :=
     MOV rdx,rax
     MOV rsp,rdx
