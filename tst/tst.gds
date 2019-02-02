@@ -1,0 +1,16 @@
+BREAK :=
+      MOV rdx,&0x484ba
+      ret &0x484ba
+
+#
+
+START:
+	INIT
+	PUSH 0
+	PUSH 0
+	PUSH 0x1
+	LIBCALL3 <strerror>
+	PUT 0  ; arg1 = "Operation not permitted"
+LABEL:
+	LIBCALL3 <puts>
+	JMP LABEL

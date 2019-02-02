@@ -66,4 +66,14 @@ SUB :=
     ADD
     NEG
 
+// ACC <- ACC + 1
+// sets flags
+INC :=
+  ret &0xb69c0
+
+// ACC <- ACC - 1
+// sets flags
+DEC :=
+  ret &0xa37a3
+
 #

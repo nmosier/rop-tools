@@ -1,0 +1,31 @@
+/* fib.gds
+ * An inefficient recursive fibbonaci sequence generator.
+ * Nicholas Mosier 2019
+ */
+
+#
+
+START:
+  INIT
+  MOV 30
+  CALL FIB_REC  ; fib(5) = ?
+  JMP $
+
+FIB_REC:
+  PUSH 2
+  CMP     ; ACC < 3 ?
+  JLT FIB_BASE
+  DEC
+  PUT 0          ; save n-1
+  CALL FIB_REC  ; fib(n-1)
+  PUSH
+  GET 8         ; get n-1
+  DEC
+  CALL FIB_REC  ; fib(n-2)
+  ADD           ; fib(n) = fib(n-1) + fib(n-2)
+  LEAVE 8
+  RET
+    
+FIB_BASE:
+  LEAVE 8
+  RET		; fib(0) = 0; fib(1) = 1
