@@ -56,6 +56,7 @@ void expression_bindpc(struct expression *expr, const struct environment *env) {
     break;
     
   case EXPRESSION_PC: // emplace current PC value
+    fprintf(stderr, "binding $ to 0x%zx\n", *env->pc);
     expr->kind = EXPRESSION_INT;
     expr->num = *env->pc;
     break;

@@ -72,7 +72,7 @@ LIBCALL3 imm64 :=
   MOV [rdx],rcx ; store return rbp value
   ADD rax,-8    ; destroys rdi / rax points to r.a. entry in stack record
   MOV rdx,rax   ; 
-  MOV rdi,$+384 ; 2 rdi = return address / 8*48 = 144 -- probably computed wrong
+  MOV rdi,$+432 ; 2 rdi = return address / 8*48 = 144 -- probably computed wrong (432)
   MOV [rdx],rdi ; 1 store return address on stack
   ADD rax,-8    ; 3
   MOV rdx,rax   ; 1
@@ -98,7 +98,6 @@ LIBCALL3 imm64 :=
   MOV rax,r9    ; 2 destroys r14
   MOV rax,[rax] ; 1 rax <- arg3
   MOV rdx,rax   ; 1 arg1,arg2,arg3 in place
-  
   /* transfer control to libc function */
   ret &0x109cf5 ; 1 leave (mov rsp,rbp \ pop rbp)
   
