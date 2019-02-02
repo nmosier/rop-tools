@@ -36,17 +36,20 @@ NUMBER_HEX	       "-"?0x[[:xdigit:]]+
 	/* RULES */
 
 	/* single-line comment */
-^("//"|";")[[:print:]]*\n	{ ++lineno; }
+^{WHITESPACE}*("//"|";")[[:print:]]*\n	{ ++lineno; }
 ("//"|";")[[:print:]]*\n	{ ++lineno; return NEWLINE; }
 					
 	/* multiline comment */
-<multiline>{MULTICOMM}"*/"\n  { ++lineno; BEGIN(INITIAL); LOG("comment end"); }
+<multiline>{MULTICOMM}"*/"{WHITESPACE}*\n  {
+                       ++lineno; BEGIN(INITIAL); LOG("comment end");
+		     }
 <multiline>{MULTICOMM}"*/"  { BEGIN(INITIAL); LOG("comment end"); }
 <multiline>{MULTICOMM}\n       { ++lineno; LOG("comment in");}
-"/*"	   	              { BEGIN(multiline); LOG("comment begin"); }
+{WHITESPACE}*"/*"              { BEGIN(multiline); LOG("comment begin"); }
 
 			      /* whitespace rules */
 			     /* indentation (after newline) */
+^{WHITESPACE}+\n        {}
 ^{WHITESPACE}+		{ return INDENT; }
 	/* consume rest of line */
 {WHITESPACE}+	   {}
