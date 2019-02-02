@@ -22,17 +22,20 @@
 /* also replaces `$' (PC) with actual value */
 struct expression *environment_bindarg(struct argument *arg,
 				       const struct environment *env) {
+  struct expression *boundexpr;
+
   switch (arg->kind) {
   case ARGUMENT_IMM64:
-    return env->imm64;
+    return expression_dup(env->imm64);
     
   case ARGUMENT_EXPR:
-    expression_bindpc(&arg->expr, env);
-    return &arg->expr;
+    if ((boundexpr = expression_dup(&arg->expr)) == NULL) {
+      return NULL;
+    }
+    expression_bindpc(boundexpr, env);
+    return boundexpr;
     
   case ARGUMENT_MEM:
-    return NULL;
-    
   case ARGUMENT_REG:
     return NULL;
     
@@ -56,8 +59,6 @@ void expression_bindpc(struct expression *expr, const struct environment *env) {
     break;
     
   case EXPRESSION_PC: // emplace current PC value
-    fprintf(stderr, "binding $ to 0x%zx\n", *env->pc);
-    expr->kind = EXPRESSION_INT;
     expr->num = *env->pc;
     break;
     
@@ -65,6 +66,52 @@ void expression_bindpc(struct expression *expr, const struct environment *env) {
     abort();
   }
 }
+
+
+/* expression_dup: perform deep-copy of expression expr */
+struct expression *expression_dup(const struct expression *expr) {
+  struct expression *newexpr;
+  
+  if ((newexpr = memdup(expr)) == NULL) {
+    return NULL;
+  }
+  
+  switch (expr->kind) {
+  case EXPRESSION_PLUS:
+  case EXPRESSION_MINUS:
+    if ((newexpr->lhs = expression_dup(expr->lhs)) == NULL) {
+      free(newexpr);
+      return NULL;
+    }
+    if ((newexpr->rhs = expression_dup(expr->rhs)) == NULL) {
+      expression_free(newexpr->lhs);
+      free(newexpr);
+      return NULL;
+    }
+    break;
+    
+  default:
+    break;
+  }
+
+  return newexpr;
+}
+
+void expression_free(struct expression *expr) {
+  switch (expr->kind) {
+  case EXPRESSION_PLUS:
+  case EXPRESSION_MINUS:
+    expression_free(expr->lhs);
+    expression_free(expr->rhs);
+    break;
+    
+  default:
+    break;
+  }
+
+  free(expr);
+}
+
 
 void environment_init(struct environment *env, uint64_t *pc,
 		      uint64_t libc_base, const struct libc_syms *libc_syms) {
@@ -280,6 +327,7 @@ uint64_t compute_expression(const struct expression *expr,
 			    const struct environment *env, int pass) {
   switch (expr->kind) {
   case EXPRESSION_INT:
+  case EXPRESSION_PC:
     return (uint64_t) expr->num;
     
   case EXPRESSION_PLUS:
@@ -298,9 +346,11 @@ uint64_t compute_expression(const struct expression *expr,
     return env->libc_base
       + compute_expression(expr->offset, env, pass);
 
+    /*
   case EXPRESSION_PC:
     assert(pass == PASS1); // pc is only updated/valid in pass 1
     return *env->pc;
+    */
 
   default:
     assert(0);

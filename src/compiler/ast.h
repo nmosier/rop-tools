@@ -33,7 +33,8 @@ struct expression {
     struct expression *offset;
   };
 };
-
+struct expression *expression_dup(const struct expression *expr);
+void expression_free(struct expression *expr);
 
 struct directive {
   enum directive_kind {DIRECTIVE_ORG, DIRECTIVE_PAD} kind;
