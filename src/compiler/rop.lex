@@ -11,6 +11,8 @@
 #define LOG(msg) if (LEXER_DEBUG) fprintf(stderr, "%s:%d: %s\n", \
 					  filename, lineno, msg)
 
+  void escape_string(char *str);
+  
   extern int lineno;
   extern const char *filename;
   extern struct symtab rop_symtab;
@@ -93,6 +95,11 @@ resq			      { return RESQ; }
 {NUMBER_HEX}                  { yylval.num = strtoll(yytext, NULL, 16);
                                  return INT; }
 
+        /* strings */
+{STRING}                      { yytext[yyleng - 1] = '\0'; // strip trailing `"'
+                                escape_string(yytext + 1);    // skip leading `"'
+                                yylval.string = strdup(yytext + 1);
+                                return STRING; }
 
 	/* identifiers */
 [A-Z_][A-Z0-9_]*    {
@@ -122,6 +129,30 @@ resq			      { return RESQ; }
 
 %%
 	/* CODE */
+char escape_char(char c) {
+  switch (c) {
+  case '0': return '\0';
+  case 'a': return '\a';
+  case 'b': return '\b';
+  case 't': return '\t';
+  case 'n': return '\n';
+  case 'v': return '\v';
+  case 'f': return '\f';
+  case 'r': return '\r';
+  default:  return c;
+  }
 
+}
 
-  
+void escape_string(char *str) {
+  char *char_it, *esc_it;
+
+  for (char_it = str, esc_it = str; *char_it; ++char_it, ++esc_it) {
+    if (*char_it == '\\') {
+      *esc_it = escape_char(*(++char_it));
+    } else {
+      *esc_it = *char_it;
+    }
+  }
+  *esc_it = '\0';
+}

@@ -36,13 +36,6 @@ struct expression {
 struct expression *expression_dup(const struct expression *expr);
 void expression_free(struct expression *expr);
 
-/*
-struct directive {
-  enum directive_kind {DIRECTIVE_ORG, DIRECTIVE_PAD} kind;
-  struct expression expr;
-};
-*/
-
 const char *expression_kind2str(enum expression_kind kind);
 
 
@@ -54,15 +47,17 @@ struct bytes {
 void bytes_init(struct bytes *bytes);
 int bytes_add(uint8_t byte, struct bytes *bytes);
 
+enum argument_kind {ARGUMENT_IMM64,
+		    ARGUMENT_REG,
+		    ARGUMENT_MEM,
+		    ARGUMENT_EXPR,
+		    ARGUMENT_STR};
 struct argument {
-  enum argument_kind {ARGUMENT_IMM64,
-		      ARGUMENT_REG,
-		      ARGUMENT_MEM,
-		      ARGUMENT_EXPR
-  } kind;
+  enum argument_kind kind;
   union {
     struct symbol *reg;
     struct expression expr;
+    char *str;
   };
 };
 

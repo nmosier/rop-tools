@@ -24,6 +24,7 @@
   const char *err_msg;
   struct symbol *symbol;
   int64_t num;
+  char *string;
   struct expression expression;
   struct argument argument;
   struct arguments arguments;
@@ -57,6 +58,7 @@
 %token NEWSEG
 %token ADDR
 %token PC
+%token <string> STRING
 
 /* non-terminals */
 %type <expression> expression
@@ -119,8 +121,8 @@ argument:
   IMM64 { $$.kind = ARGUMENT_IMM64; }
   | REG { $$.kind = ARGUMENT_REG; $$.reg = $1; }
   | MEMLEFT REG MEMRIGHT { $$.kind = ARGUMENT_MEM; $$.reg = $2; }
+  | STRING { $$.kind = ARGUMENT_STR; $$.str = $1; }
   | expression { $$.kind = ARGUMENT_EXPR; $$.expr = $1; }
-
 
 argument_list:
   argument { arguments_init(&($$)); arguments_add(&$1, &$$); }

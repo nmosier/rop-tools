@@ -39,6 +39,7 @@ struct expression *environment_bindarg(struct argument *arg,
     
   case ARGUMENT_MEM:
   case ARGUMENT_REG:
+  case ARGUMENT_STR:
     return NULL;
     
   default:
@@ -228,66 +229,7 @@ void codegen_1_instruction(struct instruction *instr, const struct environment *
 
   case INSTRUCTION_DB:
     {
-      struct bytes bytes;
-      struct argument *arg_it, *arg_end;
-      uint8_t byte, *byte_it, *byte_end;
-      uint64_t qword;
-      int qwordi, qwordc, byte_i, byte_cnt;
-      struct expression qword_expr;
-      
-      /* initialization */
-      bytes_init(&bytes);
-
-      /* convert arguments into byte sequence */
-      byte_cnt = 0;
-      for (arg_it = args->argv, arg_end = arg_it + args->argc;
-	   arg_it < arg_end; ++arg_it) {
-	/* bind argument */
-	expr = environment_bindarg(arg_it, env);
-	assert(expr);
-
-	/* compute qword expression and convert to byte */
-	num = compute_expression(expr, env, PASS1);
-	byte = (uint8_t) num;
-	if ((int64_t) num != (int64_t) byte) {
-	  CGEN_ERROR(instr->srcinfo, "value %ld will be truncated to %d.", num,
-		     byte);
-	}
-
-	/* add byte to byte array */
-	bytes_add(byte, &bytes);
-
-	/* update byte count and program counter */
-	if (byte_cnt % QWORD_SIZE == 0) {
-	  *env->pc += QWORD_SIZE;
-	}
-	++byte_cnt;
-
-	/* free bound expression */
-	expression_free(expr);
-      }
-
-      /* group byte sequence into qword expressions */
-      qwordc = bytes.bytec / 8 + (bytes.bytec % 8 ? 1 : 0); // divide, round up
-      byte_it = bytes.bytev;
-      byte_end = byte_it + bytes.bytec;
-      for (qwordi = 0; qwordi < qwordc; ++qwordi) {
-	/* initialize new qword value */
-	qword = 0;
-
-	/* because x86_64 is little endian, shift in bytes to qword
-	 * from the most significant end */
-	for (byte_i = 0; byte_i < QWORD_SIZE && byte_it < byte_end;
-	     ++byte_i, ++byte_it) {
-	  ((uint8_t *) &qword)[byte_i] = *byte_it;
-	}
-
-	/* create expression from qword number and insert into expressions vector */
-	qword_expr.kind = EXPRESSION_INT;
-	qword_expr.num = qword;
-	expressions_add(&qword_expr, exprlist);
-      }
-      
+      codegen_1_instruction_db(instr, args, env, exprlist);
       break;
     }
 
@@ -312,6 +254,72 @@ void codegen_1_instruction(struct instruction *instr, const struct environment *
   default:
     assert(0);
   }
+}
+
+void codegen_1_instruction_db(struct instruction *instr, struct arguments *args,
+			      const struct environment *env,
+			      struct expressions *exprlist) {
+  struct expression *expr;
+  struct bytes bytes;
+  struct argument *arg_it, *arg_end;
+  uint8_t byte, *byte_it, *byte_end;
+  uint64_t num, qword;
+  int qwordi, qwordc, byte_i;
+  struct expression qword_expr;
+      
+  /* initialization */
+  bytes_init(&bytes);
+
+  /* convert arguments into byte sequence */
+  for (arg_it = args->argv, arg_end = arg_it + args->argc;
+       arg_it < arg_end; ++arg_it) {
+    /* check type of argument -- string or bindable argument */
+    if (arg_it->kind == ARGUMENT_STR) {
+      for (byte_it = (uint8_t *) arg_it->str; *byte_it; ++byte_it) {
+	bytes_add(*byte_it, &bytes);
+      }
+    } else {
+      /* bind argument */
+      expr = environment_bindarg(arg_it, env);
+      assert(expr);
+	  
+      /* compute qword expression and convert to byte */
+      num = compute_expression(expr, env, PASS1);
+      byte = (uint8_t) num;
+      if ((int64_t) num != (int64_t) byte) {
+	CGEN_ERROR(instr->srcinfo, "value %ld will be truncated to %d.", num,
+		   byte);
+      }
+
+      /* add byte to byte array */
+      bytes_add(byte, &bytes);
+
+      /* free bound expression */
+      expression_free(expr);
+    }
+  }
+
+  /* group byte sequence into qword expressions */
+  qwordc = bytes.bytec / 8 + (bytes.bytec % 8 ? 1 : 0); // divide, round up
+  byte_it = bytes.bytev;
+  byte_end = byte_it + bytes.bytec;
+  for (qwordi = 0; qwordi < qwordc; ++qwordi) {
+    /* initialize new qword value */
+    qword = 0;
+
+    for (byte_i = 0; byte_i < QWORD_SIZE && byte_it < byte_end;
+	 ++byte_i, ++byte_it) {
+      ((uint8_t *) &qword)[byte_i] = *byte_it;
+    }
+
+    /* create expression from qword number and insert into expressions vector */
+    qword_expr.kind = EXPRESSION_INT;
+    qword_expr.num = qword;
+    expressions_add(&qword_expr, exprlist);
+  }
+
+  /* update program counter */
+  *env->pc += qwordc * QWORD_SIZE;
 }
 
 

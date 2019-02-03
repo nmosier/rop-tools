@@ -6,12 +6,17 @@ BREAK :=
 
 START:
 	INIT
-	ALLOC 8
+	JMP $
 	MOV BYTES
-	LD 0
-	POP      ; ACC = 0xdeadbeef
+	PUSH
+	LIBCALL3 <printf>
+	MOV MSG
+	PUT 0
+	LIBCALL3 <printf>
 	JMP $
 
 BYTES:
-	db 0xef, 0xbe, 0xad, 0xde
+	db "\ndeadbeef & baddecaf\n\0"
 
+MSG:
+	db "yum yum yum\n\0"

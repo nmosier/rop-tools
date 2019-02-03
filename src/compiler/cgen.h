@@ -50,6 +50,9 @@ void codegen_1_defn(struct rule *defn, struct environment *env,
 		    struct expressions *exprlist);
 void codegen_1_instruction(struct instruction *instr, const struct environment *env,
 			   struct expressions *exprlist);
+void codegen_1_instruction_db(struct instruction *instr, struct arguments *args,
+			      const struct environment *env,
+			      struct expressions *exprlist);
 
 void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
 	     uint64_t libc_base, const struct libc_syms *libc_syms,

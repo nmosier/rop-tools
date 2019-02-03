@@ -164,12 +164,13 @@ int argument_cmp(const struct argument *a1, const struct argument *a2) {
   switch (a1->kind) {
   case ARGUMENT_IMM64: return 0; /* terminal symbols are always equal */
   case ARGUMENT_MEM:
-  case ARGUMENT_REG: return symbol_cmp(a1->reg, a2->reg);
-  case ARGUMENT_EXPR: return 0;
-    /* aruments really shouldn't be expressions at times we need to compare them */
+  case ARGUMENT_REG:   return symbol_cmp(a1->reg, a2->reg);
+  case ARGUMENT_EXPR:  return 0;
+
+  case ARGUMENT_STR: // strings should never be passed as arguments, except to `db'
   default:
     fprintf(stderr, "argument_cmp: interal error -- incorrect argument kind.\n");
-    assert(0);
+    abort();
   }
 }
 
