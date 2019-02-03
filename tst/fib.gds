@@ -3,13 +3,22 @@
  * Nicholas Mosier 2019
  */
 
+SYSCALL_EXIT := 60
+
 #
 
 START:
   INIT
   MOV 30
   CALL FIB_REC  ; fib(5) = ?
-  JMP $
+  PUSH
+  PUSH FMT
+  LIBCALL3 <printf>
+  POP
+  MOV 0
+  PUT 0
+  MOV SYSCALL_EXIT
+  SYSCALL3
 
 FIB_REC:
   PUSH 2
@@ -29,3 +38,6 @@ FIB_REC:
 FIB_BASE:
   LEAVE 8
   RET		; fib(0) = 0; fib(1) = 1
+
+FMT:
+  db "%d\n\0"

@@ -18,8 +18,9 @@
   vector_add_decl(name, type, abbr)
 
 #define vector_def(name, type, abbr)		\
-  vector_init_def(name, type, abbr)		\
+  vector_init_def(name, type, abbr);		\
   vector_add_def(name, type, abbr)
+
 
 #define vector_struct_decl(name, type, abbr)	\
   struct name {					\
@@ -33,7 +34,7 @@
 #define vector_init_def(name, type, abbr)		\
   vector_init_decl(name, type, abbr) {			\
     memset(abbr##s, 0, sizeof(*abbr##s));		\
-  }
+  } vector_init_decl(name, type, abbr)
 
 #define vector_add_decl(name, type, abbr)	\
   int name##_add(struct type *abbr, struct name *abbr##s)
@@ -53,7 +54,7 @@
     }									\
     memcpy(&abbr##s->abbr##v[abbr##s->abbr##c++], abbr, sizeof(*abbr)); \
     return 0;								\
-  }
+  } vector_add_decl(name, type, abbr)
 
 
 #endif

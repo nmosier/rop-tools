@@ -2,7 +2,7 @@
 #include <alloca.h>
 #include <unistd.h>
 
-#define BUFSIZE 0x1000
+#define BUFSIZE 0x2000
 
 void echo() {
   ssize_t nbytes;

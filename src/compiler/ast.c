@@ -11,28 +11,11 @@
 
 #define ARR_MINLEN 16
 
-/* arguments functions */
-/*
-void arguments_init(struct arguments *args) {
-  memset(args, 0, sizeof(*args));
-}
-
-int arguments_add(struct argument *arg, struct arguments *args) {
-if (args->argc == args->maxc) {
-    struct argument *argv;
-    int newc = MAX(args->maxc*2, ARR_MINLEN);
-    if ((argv = realloc(args->argv, newc * sizeof(*args->argv))) == NULL) {
-      return -1;
-    }
-    args->argv = argv;
-    args->maxc = newc;
-  }
-  memcpy(&args->argv[args->argc++], arg, sizeof(*arg));
-  return 0;
-}
-*/
-vector_def(arguments, argument, arg)
-
+/* vector function definitions */
+vector_def(arguments, argument, arg);
+vector_def(instructions, instruction, instr);
+vector_def(rules, rule, rule);
+vector_def(blocks, block, block);
 
 void bytes_init(struct bytes *bytes) {
   memset(bytes, 0, sizeof(*bytes));
@@ -54,45 +37,7 @@ int bytes_add(uint8_t byte, struct bytes *bytes) {
 }
 
 
-/* instructions functions */
-void instructions_init(struct instructions *instrs) {
-  memset(instrs, 0, sizeof(*instrs));
-}
-
-int instructions_add(struct instruction *instr, struct instructions *instrs) {
-  if (instrs->instrc == instrs->maxc) {
-    /* resize */
-    struct instruction *instrv;
-    int newc = MAX(instrs->maxc*2, ARR_MINLEN);
-    if ((instrv = realloc(instrs->instrv, newc*sizeof(*instrv))) == NULL) {
-      return -1;
-    }
-    instrs->instrv = instrv;
-    instrs->maxc = newc;
-  }
-  memcpy(&instrs->instrv[instrs->instrc++], instr, sizeof(*instr));
-  return 0;
-}
-
-/* rules functions */
-void rules_init(struct rules *rules) {
-  memset(rules, 0, sizeof(*rules));
-}
-
-int rules_add(struct rule *rule, struct rules *rules) {
-  if (rules->rulec == rules->maxc) {
-    struct rule *rulev;
-    int newc = MAX(rules->maxc*2, ARR_MINLEN);
-    if ((rulev = realloc(rules->rulev, newc*sizeof(*rulev))) == NULL) {
-      return -1;
-    }
-    rules->rulev = rulev;
-    rules->maxc = newc;
-  }
-  memcpy(&rules->rulev[rules->rulec++], rule, sizeof(*rule));
-  return 0;
-}
-
+  
 /* checks if rule is already present in rules using rule_cmp() */
 int rules_has(struct rule *rule, struct rules *rules) {
   const struct rule *rule_it, *rule_end;
@@ -180,26 +125,6 @@ int argument_cmp(const struct argument *a1, const struct argument *a2) {
 
 int block_cmp(struct block *blk1, struct block *blk2) {
   return symbol_cmp(blk1->sym, blk2->sym);
-}
-
-
-void blocks_init(struct blocks *blocks) {
-  memset(blocks, 0, sizeof(*blocks));
-}
-
-int blocks_add(struct block *block, struct blocks *blocks) {
-  if (blocks->blockc == blocks->maxc) {
-    /* resize */
-    struct block *blockv;
-    int newc = MAX(ARR_MINLEN, blocks->blockc * 2);
-    if ((blockv = realloc(blocks->blockv, newc * sizeof(*blockv))) == NULL) {
-      return -1;
-    }
-    blocks->blockv = blockv;
-    blocks->maxc = newc;
-  }
-  memcpy(&blocks->blockv[blocks->blockc++], block, sizeof(*block));
-  return 0;
 }
 
 void program_init(struct program *prog) {
