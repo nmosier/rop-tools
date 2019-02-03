@@ -23,6 +23,8 @@ Flags:
  CMP instruction. Most instructions unpredictably destroy these flags, so a CMP
  instruction should directly precede the instruction which depends on it (JEQ, e.g.).
 
+Instruction descriptions:
+
 ########## MOVE ##########
 MOV imm64 -- move imm64 into ACC. (ACC <- imm64)
 
@@ -52,7 +54,11 @@ ADDFROM imm64 -- add value at stack index imm64 to ACC. (ACC <- ACC + [SP + imm6
 	         Preserves [SP + imm64].
 SUB           -- pop value off stack and subtract from ACC.
 	         (ACC <- ACC - [SP], SP <- SP + 8)
-
+INC           -- increase ACC. (ACC <- ACC+1). The zero flag (ZF) is set accordingly,
+	         while the carry flag (CF) is unaffected.
+DEC	      -- decrease ACC. (ACC <- ACC-1). The zero flag (ZF) is set accordingly,
+	      	 while the carry flag (CF) is unaffected.
+		 
 ####### COMPARISON #######
 CMP       -- compare ACC to top of stack. Flags are set according to the comparison
 	     `ACC - [SP]'. (ZF set iff ACC == [SP]; CF set iff ACC < [SP]).
@@ -85,7 +91,11 @@ SYSCALL3   -- perform three-argument system call. ACC contains the system call n
 	      first argument is at the top of the stack, followed by argument 2 and
 	      then argument 3 (i.e. the address increases with argument number).
 	      (arg1 = [SP], arg2 = [SP+8], arg3 = [SP+16])
-	      
+LIBCALL3   -- perform three-argument library call. The three arguments are passed on
+	      the stack, ordered such that the first argument is at the top of the
+	      stack, followed by argument 2, etc. (arg1 = [SP], arg2 = [SP+8],
+	      arg3 = [SP+16]). ACC is ignored when call is made. Return value is
+	      stored in ACC.
 
 ######### OTHER ##########
 INIT -- initialize program. Currently, this instruction only sets up the stack.

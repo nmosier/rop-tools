@@ -5,6 +5,8 @@
 #ifndef __UTIL_H
 #define __UTIL_H
 
+#include <stdio.h>
+
 /* types */
 #define LIBC_SYM_NAME_MAXLEN 128
 #define LIBC_SYM_LINE_MAXLEN 128

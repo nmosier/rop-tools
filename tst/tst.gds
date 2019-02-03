@@ -6,7 +6,6 @@ BREAK :=
 
 START:
 	INIT
-	JMP $
 	MOV BYTES
 	PUSH
 	LIBCALL3 <printf>

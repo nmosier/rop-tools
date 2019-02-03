@@ -5,19 +5,20 @@
 
 #include "ast.h"
 #include "symtab.h"
+#include "vec.h"
 
 #define MAX(i1, i2) ((i1) < (i2) ? (i2) : (i1))
 
 #define ARR_MINLEN 16
 
 /* arguments functions */
+/*
 void arguments_init(struct arguments *args) {
   memset(args, 0, sizeof(*args));
 }
 
 int arguments_add(struct argument *arg, struct arguments *args) {
-  if (args->argc == args->maxc) {
-    /* resize */
+if (args->argc == args->maxc) {
     struct argument *argv;
     int newc = MAX(args->maxc*2, ARR_MINLEN);
     if ((argv = realloc(args->argv, newc * sizeof(*args->argv))) == NULL) {
@@ -29,6 +30,9 @@ int arguments_add(struct argument *arg, struct arguments *args) {
   memcpy(&args->argv[args->argc++], arg, sizeof(*arg));
   return 0;
 }
+*/
+vector_def(arguments, argument, arg)
+
 
 void bytes_init(struct bytes *bytes) {
   memset(bytes, 0, sizeof(*bytes));
