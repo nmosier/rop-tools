@@ -25,7 +25,10 @@ WHITESPACE 	       [ \t]
 MULTICOMM	       ([^*\n]("*"+[^/\n])?)*"*"*
 NUMBER_DEC	       "-"?[[:digit:]]+
 NUMBER_HEX	       "-"?0x[[:xdigit:]]+
-  //NUMBER		       "-"?({NUMBER_DEC}|{NUMBER_HEX})
+CHAR_ESCAPE            [\\][[:print:][:space:]]
+CHAR_PLAIN             [[:graph:][:blank:]]{-}[\\\"]
+STRING_BODY            ({CHAR_ESCAPE}|{CHAR_PLAIN})*
+STRING                 \"{STRING_BODY}\"
 
         /* conditions */
 %x multiline
@@ -80,6 +83,7 @@ NUMBER_HEX	       "-"?0x[[:xdigit:]]+
 ret			      { return RET; }
 imm64			      { return IMM64; }
 dq			      { return DQ; }
+db                            { return DB; }
 resq			      { return RESQ; }
 
 

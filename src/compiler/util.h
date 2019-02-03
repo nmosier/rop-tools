@@ -32,4 +32,9 @@ void *memdup_f(const void *ptr, size_t size);
 #define ARR_MINLEN 16
 #define ARRLEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
+#define GENERIC_ERROR(name, srcinfo, desc, ...)				\
+  fprintf(stderr, "%s: %s:%d: " desc "\n", name, (srcinfo).filename,	\
+	  (srcinfo).lineno, __VA_ARGS__)
+
+
 #endif

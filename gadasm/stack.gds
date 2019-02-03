@@ -64,6 +64,16 @@ ALLOC imm64 :=
     MOV rbp,rax
     MOV rax,rcx
 
+// alloc ACC bytes
+ALLOC :=
+  MOV rcx,rax
+  MOV rdx,rax
+  MOV rax,rbp
+  SUB rax,rdx
+  MOV rbp,rax
+  MOV rax,rcx
+
+
 // adds imm64 to SP
 LEAVE imm64 :=
     MOV rcx,rax   ; preserve ACC

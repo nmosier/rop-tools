@@ -36,12 +36,23 @@ struct expression {
 struct expression *expression_dup(const struct expression *expr);
 void expression_free(struct expression *expr);
 
+/*
 struct directive {
   enum directive_kind {DIRECTIVE_ORG, DIRECTIVE_PAD} kind;
   struct expression expr;
 };
+*/
 
 const char *expression_kind2str(enum expression_kind kind);
+
+
+struct bytes {
+  uint8_t *bytev;
+  int bytec;
+  int maxc;
+};
+void bytes_init(struct bytes *bytes);
+int bytes_add(uint8_t byte, struct bytes *bytes);
 
 struct argument {
   enum argument_kind {ARGUMENT_IMM64,
@@ -61,11 +72,13 @@ struct arguments {
   int maxc;
 };
 void arguments_init(struct arguments *args);
+
 int arguments_add(struct argument *arg, struct arguments *args);
 
+enum instruction_kind {INSTRUCTION_RET, INSTRUCTION_RESQ, INSTRUCTION_DQ,
+		       INSTRUCTION_DB, INSTRUCTION_RULE};
 struct instruction {
-  enum instruction_kind { INSTRUCTION_RET, INSTRUCTION_RESQ,
-			  INSTRUCTION_DQ, INSTRUCTION_RULE } kind;
+  enum instruction_kind kind;
   struct arguments args;
   struct symbol *sym;
   struct rule *ref; // rule that it is a reference to

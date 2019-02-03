@@ -44,6 +44,7 @@
 %token MEMRIGHT
 %token RET
 %token DQ
+%token DB
 %token RESQ
 %token INDENT
 %token <symbol> REG
@@ -120,6 +121,7 @@ argument:
   | MEMLEFT REG MEMRIGHT { $$.kind = ARGUMENT_MEM; $$.reg = $2; }
   | expression { $$.kind = ARGUMENT_EXPR; $$.expr = $1; }
 
+
 argument_list:
   argument { arguments_init(&($$)); arguments_add(&$1, &$$); }
   | argument_list ARGSEP argument { arguments_add(&$3, &$$); }
@@ -132,6 +134,7 @@ instruction_prefix:
   RET { $$.kind = INSTRUCTION_RET; }
   | RESQ { $$.kind = INSTRUCTION_RESQ; }
   | DQ { $$.kind = INSTRUCTION_DQ; }
+  | DB { $$.kind = INSTRUCTION_DB; }
   | IDENTIFIER {
       $$.kind = INSTRUCTION_RULE;
       $$.sym = $1;

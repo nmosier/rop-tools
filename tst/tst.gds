@@ -6,11 +6,12 @@ BREAK :=
 
 START:
 	INIT
-	PUSH 0
-	PUSH 0
-	PUSH 0x1
-	LIBCALL3 <strerror>
-	PUT 0  ; arg1 = "Operation not permitted"
-LABEL:
-	LIBCALL3 <puts>
-	JMP LABEL
+	ALLOC 8
+	MOV BYTES
+	LD 0
+	POP      ; ACC = 0xdeadbeef
+	JMP $
+
+BYTES:
+	db 0xef, 0xbe, 0xad, 0xde
+

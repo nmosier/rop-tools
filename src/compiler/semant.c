@@ -7,11 +7,11 @@
 #include <assert.h>
 
 #include "ast.h"
+#include "util.h"
 #include "symtab.h"
 
 #define SEMANT_ERROR(srcinfo, desc, ...)	\
-  fprintf(stderr, "semant: %s:%d: " desc "\n", (srcinfo).filename, (srcinfo).lineno, \
-	  __VA_ARGS__)
+  GENERIC_ERROR("semant", srcinfo, desc, __VA_ARGS__)
 
 int semant_check_rules(struct rules *rules, struct symtab *tab) {
   struct rule *rule_it, *rule_end;
