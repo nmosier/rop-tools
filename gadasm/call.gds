@@ -59,7 +59,19 @@ SYSCALL3 :=
   MOV rax,rcx   ; restore ACC (which is the syscall number)
   ret &0x11724b ; perform syscall
 
-LIBCALL3 imm64 :=
+// destroys rdi,rsi
+// rax <- rax & imm64
+AND rax,imm64 :=
+  MOV rdi,imm64
+  MOV rsi,0
+  ret &0xfb902
+
+OR rax,imm64 :=
+  MOV rsi,imm64
+  ret &0xfb902 + 3
+
+// do not use -- unaligned, may cause segfaults
+LIBCALL3_UNALIGNED imm64 :=
   /* setup special stack record for libc function */
   ret &0x30e95 + 1
   resq 2          ; part of above gadget   ; MOV rax,rbp    -- destroys rbp
@@ -100,7 +112,51 @@ LIBCALL3 imm64 :=
   MOV rdx,rax   ; 1 arg1,arg2,arg3 in place
   /* transfer control to libc function */
   ret &0x109cf5 ; 1 leave (mov rsp,rbp \ pop rbp)
+
+
+LIBCALL3 imm64 :=
+  /* setup special stack record for libc function */
+  ret &0x30e95 + 1
+  resq 2        ; part of above gadget   ; MOV rax,rbp    -- destroys rbp
+  MOV rcx,rax   ; preserve unaligned return $rbp value / destroys rax
+  MOV rax,rcx   ; restore rax
+  ADD rax,-40   ;
+  OR rax,8      ; see diagram -- rbp (caller, saved)
+  MOV rbp,rax   ; destroys rdx,r9,r12,r13,r14
+  MOV rdx,rax   ; used later for storing old $rbp
+  MOV [rdx],rcx ; store return rbp value
+  ADD rax,24    ; destroys rdi / rax points to r.a. entry in stack record
+  MOV rdx,rax   ; 
+  MOV rdi,$+440 ; 2 rdi = return address / 8*48 = 144
+  MOV [rdx],rdi ; 1 store return address on stack
+  ADD rax,-8    ; 3
+  MOV rdx,rax   ; 1
+  MOV rdi,&0x16c50b ; 2 address of `pop rsp' gadget
+  MOV [rdx],rdi ; 1
+  ADD rax,-8    ; 3 destroys rdi / rax points to libcaddr entry in stack record
+  MOV rdx,rax   ; 1
+  MOV rdi,imm64 ; 2 rdi = libc function address
+  MOV [rdx],rdi ; 1 store libc function address on stack
   
+  /* load arguments into registers */
+  MOV rax,rcx   ; restore caller rbp value to rax for indexing arguments on stack
+  ADD rax,8     ; 3 index of arg2: 8*4=-32
+  MOV r9,rax    ; 4 preserve rax / destroys r12,r13,r14
+  MOV rax,[rax] ; 1 load arg2
+  MOV rsi,rax   ; 1 destroys rdi / arg2 in place
+  MOV rax,r9    ; 2 restore rax / destroys r14
+  ADD rax,8     ; 3 rax <- index of arg3 / destroys rdi
+  MOV r9,rax    ; 4 r9 <- index of arg3 / destroys r12,r13,r14
+  ADD rax,-16   ; 3 rax <- index of arg1 / destroys rdi
+  MOV rax,[rax] ; 1 rax <- arg1
+  MOV rdx,rax   ; 1
+  MOV rdi,rdx   ; 3 arg1,arg2 in place / destroys rax
+  MOV rax,r9    ; 2 destroys r14
+  MOV rax,[rax] ; 1 rax <- arg3
+  MOV rdx,rax   ; 1 arg1,arg2,arg3 in place
+  /* transfer control to libc function */
+  ret &0x109cf5 ; 1 leave (mov rsp,rbp \ pop rbp)
+
 
 
 /*
@@ -110,15 +166,17 @@ LIBCALL3 imm64 :=
 |  arg2  |
 ----------
 |  arg1  | <-
-----------  |
-|  r.a.  |  |
-----------  |
-|&pop rsp|  |
-----------  |
-|libcaddr|  |
-----------  |
+----------  |   0x???????????????0
+| ?????? |  |   <--- alignment padding
+----------  |   0x???????????????8
+|  r.a.  |  |   <--- this is the ROP return address (i.e. $rsp)
+----------  |   0x???????????????0
+|&pop rsp|  |   <--- libc thinks this is the return address
+----------  |   0x???????????????8
+|libcaddr|  |   <--- libc will push old $rbp here
+----------  |   0x???????????????0
 |  rbp   | -|
-----------
+----------      0x???????????????8
 */
 
 // destroys rdi

@@ -12,6 +12,7 @@
 #include "symtab.h"
 #include "ast.h"
 #include "util.h"
+#include "vec.h"
 
 #define PASS1 1
 #define PASS2 2
@@ -115,6 +116,24 @@ void expression_free(struct expression *expr) {
   free(expr);
 }
 
+void bytes_init(struct bytes *bytes) {
+  memset(bytes, 0, sizeof(*bytes));
+}
+
+int bytes_add(uint8_t byte, struct bytes *bytes) {
+  if (bytes->bytec == bytes->maxc) {
+    /* resize */
+    uint8_t *bytev;
+    int newc = MAX(bytes->bytec*2, ARR_MINLEN);
+    if ((bytev = realloc(bytes->bytev, newc * sizeof(*bytes->bytev))) == NULL) {
+      return -1;
+    }
+    bytes->bytev = bytev;
+    bytes->maxc = newc;
+  }
+  bytes->bytev[bytes->bytec++] = byte;
+  return 0;
+}
 
 void environment_init(struct environment *env, uint64_t *pc,
 		      uint64_t libc_base, const struct libc_syms *libc_syms) {
@@ -367,15 +386,14 @@ void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
 }
 
 
-
-/* note: `struct expressions' is actually a list of expression pointers */
+vector_def(expressions, expression, expr);
+/*
 void expressions_init(struct expressions *exprs) {
   memset(exprs, 0, sizeof(*exprs));
 }
 
 int expressions_add(struct expression *expr, struct expressions *exprs) {
   if (exprs->exprc == exprs->maxc) {
-    /* resize */
     struct expression *exprv;
     int newc;
     newc = MAX(exprs->maxc*2, ARR_MINLEN);
@@ -388,7 +406,7 @@ int expressions_add(struct expression *expr, struct expressions *exprs) {
   memcpy(&exprs->exprv[exprs->exprc++], expr, sizeof(*expr));
   return 0;
 }
-
+*/
 
 /* computes expression (forces resolution to uint64_t) */
 uint64_t compute_expression(const struct expression *expr,

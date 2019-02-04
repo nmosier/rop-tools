@@ -23,6 +23,14 @@ struct expressions {
 void expressions_init(struct expressions *exprs);
 int expressions_add(struct expression *expr, struct expressions *exprs);
 
+struct bytes {
+  uint8_t *bytev;
+  int bytec;
+  int maxc;
+};
+void bytes_init(struct bytes *bytes);
+int bytes_add(uint8_t byte, struct bytes *bytes);
+
 struct environment {
   uint64_t *pc;
   struct expression *imm64;

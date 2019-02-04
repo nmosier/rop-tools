@@ -6,16 +6,11 @@ BREAK :=
 
 START:
 	INIT
-	MOV BYTES
-	PUSH
+	PUSH STR
 	LIBCALL3 <printf>
-	MOV MSG
+	MOV 42
 	PUT 0
-	LIBCALL3 <printf>
-	JMP $
+	LIBCALL3 <exit>
 
-BYTES:
-	db "\ndeadbeef & baddecaf\n\0"
-
-MSG:
-	db "yum yum yum\n\0"
+STR:
+	db "Hello, world!\n\0"

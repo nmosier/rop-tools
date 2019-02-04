@@ -38,15 +38,6 @@ void expression_free(struct expression *expr);
 
 const char *expression_kind2str(enum expression_kind kind);
 
-
-struct bytes {
-  uint8_t *bytev;
-  int bytec;
-  int maxc;
-};
-void bytes_init(struct bytes *bytes);
-int bytes_add(uint8_t byte, struct bytes *bytes);
-
 enum argument_kind {ARGUMENT_IMM64,
 		    ARGUMENT_REG,
 		    ARGUMENT_MEM,

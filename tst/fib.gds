@@ -10,13 +10,19 @@ SYSCALL_EXIT := 60
 START:
   INIT
   MOV 30
+LOOP:
+  PUSH
   CALL FIB_REC  ; fib(5) = ?
   PUSH
   PUSH FMT
   LIBCALL3 <printf>
+  LEAVE 16
   POP
-  MOV 0
-  PUT 0
+  DEC
+  JNE LOOP
+
+DONE:
+  PUSH 0
   MOV SYSCALL_EXIT
   SYSCALL3
 
@@ -34,7 +40,7 @@ FIB_REC:
   ADD           ; fib(n) = fib(n-1) + fib(n-2)
   LEAVE 8
   RET
-    
+
 FIB_BASE:
   LEAVE 8
   RET		; fib(0) = 0; fib(1) = 1

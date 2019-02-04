@@ -17,24 +17,6 @@ vector_def(instructions, instruction, instr);
 vector_def(rules, rule, rule);
 vector_def(blocks, block, block);
 
-void bytes_init(struct bytes *bytes) {
-  memset(bytes, 0, sizeof(*bytes));
-}
-
-int bytes_add(uint8_t byte, struct bytes *bytes) {
-  if (bytes->bytec == bytes->maxc) {
-    /* resize */
-    uint8_t *bytev;
-    int newc = MAX(bytes->bytec*2, ARR_MINLEN);
-    if ((bytev = realloc(bytes->bytev, newc * sizeof(*bytes->bytev))) == NULL) {
-      return -1;
-    }
-    bytes->bytev = bytev;
-    bytes->maxc = newc;
-  }
-  bytes->bytev[bytes->bytec++] = byte;
-  return 0;
-}
 
 
   
