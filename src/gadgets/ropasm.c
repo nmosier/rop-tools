@@ -1,14 +1,3 @@
-/*
-#include <llvm/MC/MCAsmInfo.h>
-#include <llvm/MC/MCContext.h>
-#include <llvm/MC/MCDisassembler/MCDisassembler.h>
-#include <llvm/MC/MCInst.h>
-#include <llvm/MC/MCInstPrinter.h>
-#include <llvm/MC/MCInstrInfo.h>
-#include <llvm/MC/MCRegisterInfo.h>
-#include <llvm/MC/MCSubtargetInfo.h>
-*/
-
 #include <llvm-c/Disassembler.h>
 #include <llvm-c/Target.h>
 
@@ -63,7 +52,6 @@ void instr_init(instr_t *instr) {
   ( if dcr is non-null) */
 int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
 		   LLVMDisasmContextRef dcr, instr_t *instr) {
-
   assert (mclen <= INSTR_MC_MAXLEN);
   memcpy(instr->mc, mc, mclen);
   instr->mclen = mclen;
@@ -112,7 +100,6 @@ int instr_print(const instr_t *instr, FILE *f, int mode) {
   return 0;
 }
 
-/* simple wrapper functions */
 void instrs_init(instrs_t *instrs) {
   memset(instrs, 0, sizeof(*instrs));
 }
