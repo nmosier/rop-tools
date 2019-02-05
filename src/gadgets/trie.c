@@ -61,17 +61,10 @@ trie_t trie_addnodeat(trie_val_t *val, trie_node_t *par) {
     }
   }
 
-  //assert (trie_validate(par) == TRIE_VALIDATE_OK);
-
   return node;
 }
 
 // adds instruction to trie by following buffer.
-//int trie_addinstr_aux(uint8_t *instr, size_t len, Elf64_Off off,
-//		      trie_node_t *curnode);
-//int trie_addinstr(uint8_t *instr, size_t len, Elf64_Off off, trie_t trie) {
-//  return trie_addinstr_aux(instr, len, off, trie);
-//}
 
 // vals is simple array (not VECTOR!)
 int trie_addval(trie_val_t *vals, size_t cnt, trie_t trie) {
@@ -98,24 +91,19 @@ int trie_addval(trie_val_t *vals, size_t cnt, trie_t trie) {
     /* if leading value and value of child are equal, 
      * recursively add to child trie */
     if (trie_val_eq(&child->tn_val, vals + 0)) {
-      //assert (trie_validate(trie) == TRIE_VALIDATE_OK);
       int addval_result = trie_addval(vals + 1, cnt - 1, child);
-      //assert (trie_validate(trie) == TRIE_VALIDATE_OK);
       return addval_result;
     }
   }
 
   /* no value match with child -- create new child  */
   trie_node_t *newchild;
-  //assert (trie_validate(trie) == TRIE_VALIDATE_OK);
   if ((newchild = trie_addnodeat(vals + 0, node)) == TRIE_ERROR) {
     return -1;
   }
-  //  assert (trie_validate(trie) == TRIE_VALIDATE_OK);
   /* recurse on child in case of any trailing values  */
   assert (newchild);
   int addval_result = trie_addval(vals + 1, cnt - 1, newchild);
-  //assert(trie_validate(trie) == TRIE_VALIDATE_OK);
   return addval_result;
 }
 
@@ -149,19 +137,21 @@ int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
   /* base case: no children. */
   if (node->tn_children.cnt == 0 || prefix_cnt == TRIE_PRINT_MAXPREFIX) {
     /* print address */
-    fprintf(f, "0x%lx:\n", node->tn_val.mcoff);
+    // fprintf(f, "0x%lx:\n", node->tn_val.mcoff);
     
     /* print self */
     trie_val_print(&node->tn_val, f, mode);
     fprintf(f, "\n");
 
-    /* print prefix */
-    for (ssize_t i = prefix_cnt - 1; i >= 0; --i) {
+    /* print prefix 
+     * note: don't print the first prefix value, since that's the `null' node */
+    for (ssize_t i = prefix_cnt - 1; i >= 1; --i) {
       if (prefix[i]) {
 	trie_val_print(prefix[i], f, mode);
 	fprintf(f, "\n");
       }
     }
+    fprintf(f, "\n");
   } else {
     /* print children nodes */
     size_t children_cnt = node->tn_children.cnt;

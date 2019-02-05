@@ -40,8 +40,8 @@ PUT imm64   -- store ACC into value at stack index imm64. ([SP + imm64] <- ACC).
 LEA imm64   -- load effective address of stack index. (ACC <- SP + imm64).
 ALLOC imm64 -- allocate imm64 bytes on the stack. Must be a multiple of 8. Preserves
       	       ACC. (SP <- SP - imm64). See related LEAVE instruction.
-LEAVE imm64 -- deallocate imm64 bytes on the stack. Must be a multiple of 8. Preserves
-      	       ACC. (SP <- SP + imm64).	       
+LEAVE imm64 -- deallocate imm64 bytes on the stack. Must be a multiple of 8.
+      	       Preserves ACC. (SP <- SP + imm64).	       
 
 ######### MEMORY #########
 LD imm64  -- load 64-bit value from [ACC] into [SP + imm64]. Preserves ACC.

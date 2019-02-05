@@ -18,6 +18,7 @@ enum instr_retv { INSTR_OK, INSTR_BAD, INSTR_ERR };
 /* can be OR'ed together */
 #define INSTR_PRINT_HEX    1
 #define INSTR_PRINT_DISASM 2
+#define INSTR_PRINT_ADDR   4
 
 typedef struct instr {
   uint8_t mc[INSTR_MC_MAXLEN]; // machine code bytes

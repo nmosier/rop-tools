@@ -87,6 +87,9 @@ int instr_eq(const instr_t *lhs, const instr_t *rhs) {
 
 int instr_print(const instr_t *instr, FILE *f, int mode) {
   if (instr) {
+    if (mode & INSTR_PRINT_ADDR) {
+      fprintf(f, "%p: ", (void *) instr->mcoff);
+    }
     if (mode & INSTR_PRINT_HEX) {
       for (size_t i = 0; i < instr->mclen; ++i) {
 	fprintf(f, "%1.1hx ", instr->mc[i]);

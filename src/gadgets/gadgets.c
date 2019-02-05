@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "%s: %s: %s\n", argv[0], gadgets_outpath, strerror(errno));
     goto cleanup;
   }
-  trie_print(trie, gadgetf, INSTR_PRINT_HEX | INSTR_PRINT_DISASM);
+  trie_print(trie, gadgetf, INSTR_PRINT_HEX|INSTR_PRINT_DISASM|INSTR_PRINT_ADDR);
   
   /* success */
   if (VERBOSE) {

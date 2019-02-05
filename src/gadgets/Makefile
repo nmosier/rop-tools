@@ -1,8 +1,8 @@
 CFLAGS=-c -g -Wall -pedantic -Werror
 LIBS=-lelf `llvm-config --cxxflags --libs` `llvm-config --ldflags`
-OBJS=gadgdump.o ropelf.o ropbank.o util.o trie.o vec.o ropasm.o ropalg.o
+OBJS=gadgets.o ropelf.o ropbank.o util.o trie.o vec.o ropasm.o ropalg.o
 
-gadgdump: $(OBJS)
+gadgets: $(OBJS)
 	gcc $(LIBS) -o $@ $^
 
 %.o: %.c %.h
