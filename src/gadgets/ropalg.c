@@ -58,14 +58,6 @@ int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
   return 0;
 }
 
-/* returns 1 if instruction is boundary, 0 if not */
-/*
-int gadget_boundary(uint8_t *ptr) {
-  return *ptr == OPCODE_RET;
-}
-*/
-
-
 static const instr_t INSTR_RET = {{[0] = OPCODE_RET}, 1, 0, {0}};
 
 int gadget_boundary(instr_t *instr) {

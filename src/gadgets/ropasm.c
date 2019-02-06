@@ -48,8 +48,8 @@ void instr_init(instr_t *instr) {
   memset(instr, 0, sizeof(*instr));
 }
 
-/*allocates new instruction; initialzies with gien params; attempts to disasm
-  ( if dcr is non-null) */
+/* allocates new instruction; initialzies with given params; attempts to disasm
+  (if dcr is non-null) */
 int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
 		   LLVMDisasmContextRef dcr, instr_t *instr) {
   assert (mclen <= INSTR_MC_MAXLEN);
