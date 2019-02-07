@@ -56,8 +56,8 @@ int main(int argc, char *argv[]) {
     "                           padding value\n"			\
     "  -a <sym>,<addr>        Anchor libc symbol followed by address\n"	\
     "  -s <file>              Path to nm(1) dump of libc symbols\n"	\
-    "  -o <file>[,<file2>]    Place compiled shellcode in file (or files, if 2-stage"\
-    "                           exploit)\n"					\
+    "  -o <file>[,<file2>]    Place compiled shellcode in file (or files, if\n"	\
+    "                           two-stage exploit)\n"			\
     "  -c <config_file>       Path to configuration file containing directives\n"\
     "                           followed by paramters. Supported directives:\n" \
     "                           .origin <addr>\n"			\
@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
   /* parameter address/offset checking:
    *   - warning if address/offset not properly aligned
    *   - warning if address/offset is zero */
+  // TODO: split off into self-contained function.
   struct {
     int flags;
     uint64_t val;
@@ -188,8 +189,6 @@ int main(int argc, char *argv[]) {
 	      "boundary.\n", argv[0], directives[i].name, directives[i].align);
     }
   }
-
-
   
   /* print debug info */
   if (debug) {
@@ -245,7 +244,7 @@ int main(int argc, char *argv[]) {
 
   /* code generation */
   codegen(&rop_program, &rop_symtab, origin, libc_base_addr, &libc_syms, padding,
-	  padding_val, outfile);
+	  padding_val, stages, outfile);
   
  cleanup:
   for (int i = 0; i < infiles_cnt; ++i) {

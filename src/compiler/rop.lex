@@ -75,11 +75,14 @@ STRING                 \"{STRING_BODY}\"
 ","			      { return ARGSEP; }
 "+"			      { return PLUS; }
 "-"			      { return MINUS; }
+"/"                           { return DIV; }
 ":="			      { return DEF; }
 "#"+\n                        { return NEWSEG; }
 ":"                           { return LABEL; }
 "&"                           { return ADDR; }
 "$"                           { return PC; }
+"("                           { return LPAREN; }
+")"                           { return RPAREN; }
 
          /* keywords */
 ret			      { return RET; }
@@ -87,6 +90,7 @@ imm64			      { return IMM64; }
 dq			      { return DQ; }
 db                            { return DB; }
 resq			      { return RESQ; }
+org                           { return ORG; }
 
 
 	/* numbers */

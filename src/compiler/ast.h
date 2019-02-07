@@ -18,6 +18,7 @@ enum expression_kind {EXPRESSION_EXT,
 		      EXPRESSION_INT,
 		      EXPRESSION_PLUS,
 		      EXPRESSION_MINUS,
+		      EXPRESSION_DIV,
 		      EXPRESSION_ADDR,
 		      EXPRESSION_PC};
 
@@ -62,7 +63,7 @@ void arguments_init(struct arguments *args);
 int arguments_add(struct argument *arg, struct arguments *args);
 
 enum instruction_kind {INSTRUCTION_RET, INSTRUCTION_RESQ, INSTRUCTION_DQ,
-		       INSTRUCTION_DB, INSTRUCTION_RULE};
+		       INSTRUCTION_DB, INSTRUCTION_RULE, INSTRUCTION_ORG};
 struct instruction {
   enum instruction_kind kind;
   struct arguments args;

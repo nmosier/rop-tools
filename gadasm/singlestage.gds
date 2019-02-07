@@ -1,0 +1,10 @@
+/* singlestage.gds -- include this FIRST when creating a single-stage exploit
+ * Nicholas Mosier 2019
+ */
+
+// expects PADDING to be defined (in bytes, not qwords)
+
+#
+
+__PADDING__:
+  resq PADDING / 8

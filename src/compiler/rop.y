@@ -59,6 +59,9 @@
 %token ADDR
 %token PC
 %token <string> STRING
+%token ORG
+%token LPAREN
+%token RPAREN
 
 /* non-terminals */
 %type <expression> expression
@@ -86,6 +89,7 @@
 /* precedenance declarations */
 %left PLUS
 %left MINUS
+%left DIV
 %nonassoc ADDR
 
 %%
@@ -111,11 +115,17 @@ expression:
       $$.lhs = memdup(&$1);
       $$.rhs = memdup(&$3);
     }
+  | expression DIV expression {
+      $$.kind = EXPRESSION_DIV;
+      $$.lhs = memdup(&$1);
+      $$.rhs = memdup(&$3);
+    }
   | ADDR expression {
       $$.kind = EXPRESSION_ADDR;
       $$.offset = memdup(&$2);
     }
   | PC { $$.kind = EXPRESSION_PC; }
+  | LPAREN expression RPAREN { $$ = $2; }
 
 argument:
   IMM64 { $$.kind = ARGUMENT_IMM64; }
@@ -137,6 +147,7 @@ instruction_prefix:
   | RESQ { $$.kind = INSTRUCTION_RESQ; }
   | DQ { $$.kind = INSTRUCTION_DQ; }
   | DB { $$.kind = INSTRUCTION_DB; }
+  | ORG { $$.kind = INSTRUCTION_ORG; }
   | IDENTIFIER {
       $$.kind = INSTRUCTION_RULE;
       $$.sym = $1;

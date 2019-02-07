@@ -64,7 +64,7 @@ void codegen_1_instruction_db(struct instruction *instr, struct arguments *args,
 
 void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
 	     uint64_t libc_base, const struct libc_syms *libc_syms,
-	     uint64_t padding, uint64_t padding_val, FILE *outfile);
+	     uint64_t padding, uint64_t padding_val, int stages, FILE *outfile);
 
 uint64_t compute_expression(const struct expression *expr,
 			    const struct environment *env, int pass);

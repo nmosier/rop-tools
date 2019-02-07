@@ -58,6 +58,7 @@ void expression_bindpc(struct expression *expr, const struct environment *env) {
     
   case EXPRESSION_PLUS:
   case EXPRESSION_MINUS:
+  case EXPRESSION_DIV:
     expression_bindpc(expr->lhs, env);
     expression_bindpc(expr->rhs, env);
     break;
@@ -83,6 +84,7 @@ struct expression *expression_dup(const struct expression *expr) {
   switch (expr->kind) {
   case EXPRESSION_PLUS:
   case EXPRESSION_MINUS:
+  case EXPRESSION_DIV:
     if ((newexpr->lhs = expression_dup(expr->lhs)) == NULL) {
       free(newexpr);
       return NULL;
@@ -105,6 +107,7 @@ void expression_free(struct expression *expr) {
   switch (expr->kind) {
   case EXPRESSION_PLUS:
   case EXPRESSION_MINUS:
+  case EXPRESSION_DIV:
     expression_free(expr->lhs);
     expression_free(expr->rhs);
     break;
@@ -247,10 +250,16 @@ void codegen_1_instruction(struct instruction *instr, const struct environment *
     break;
 
   case INSTRUCTION_DB:
-    {
-      codegen_1_instruction_db(instr, args, env, exprlist);
-      break;
-    }
+    codegen_1_instruction_db(instr, args, env, exprlist);
+    break;
+
+  case INSTRUCTION_ORG: // directive to set PC to given value
+    assert(args->argc == 1);
+    arg = &args->argv[0];
+    expr = environment_bindarg(arg, env);
+    *env->pc = compute_expression(expr, env, PASS1);
+    fprintf(stderr, "cgen: new PC is 0x%lx\n", *env->pc);
+    break;
 
   case INSTRUCTION_RULE:
     {
@@ -359,7 +368,7 @@ void codegen_pass1(struct program *prog, uint64_t *pc, struct expressions *exprl
 
 void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
 	     uint64_t libc_base, const struct libc_syms *libc_syms,
-	     uint64_t padding, uint64_t padding_val, FILE *outfile) {
+	     uint64_t padding, uint64_t padding_val, int stages, FILE *outfile) {
   struct expressions exprlist; // intermediate list of expressions that will
                                // resolve to imm64's
   struct environment env;
@@ -378,35 +387,21 @@ void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
   codegen_pass1(prog, &pc, &exprlist, &env);
 
   /* post-pass-1 assertions */
-  assert(pc == pc_origin + padding + exprlist.exprc*QWORD_SIZE);
+  //  assert(pc == pc_origin + padding + exprlist.exprc*QWORD_SIZE);
 
   /* pass 2 */
   codegen_pass2(&exprlist, &env, outfile);
   
 }
 
+void codegen_stage1_prologue(struct program *prog, struct symtab *tab,
+			     uint64_t pc_origin, uint64_t libc_base,
+			     const struct libc_syms *libc_syms, uint64_t padding,
+			     uint64_t padding_val, int stages, FILE *outfile) {
+  
+}
 
 vector_def(expressions, expression, expr);
-/*
-void expressions_init(struct expressions *exprs) {
-  memset(exprs, 0, sizeof(*exprs));
-}
-
-int expressions_add(struct expression *expr, struct expressions *exprs) {
-  if (exprs->exprc == exprs->maxc) {
-    struct expression *exprv;
-    int newc;
-    newc = MAX(exprs->maxc*2, ARR_MINLEN);
-    if ((exprv = realloc(exprs->exprv, sizeof(*exprv)*newc)) == NULL) {
-      return -1; // internal error
-    }
-    exprs->exprv = exprv;
-    exprs->maxc = newc;
-  }
-  memcpy(&exprs->exprv[exprs->exprc++], expr, sizeof(*expr));
-  return 0;
-}
-*/
 
 /* computes expression (forces resolution to uint64_t) */
 uint64_t compute_expression(const struct expression *expr,
@@ -423,6 +418,17 @@ uint64_t compute_expression(const struct expression *expr,
   case EXPRESSION_MINUS:
     return compute_expression(expr->lhs, env, pass)
       - compute_expression(expr->rhs, env, pass);
+
+  case EXPRESSION_DIV:
+    {
+      uint64_t lhs = compute_expression(expr->lhs, env, pass),
+	       rhs = compute_expression(expr->rhs, env, pass);
+      if ((lhs % rhs)) {
+	fprintf(stderr, "warning: left-hand side (=0x%lx) of expression is not\n" \
+		"right-hand side (=0x%lx).\n", lhs, rhs);
+      }
+      return lhs / rhs;
+    }
     
   case EXPRESSION_EXT:
   case EXPRESSION_ID:
@@ -472,7 +478,9 @@ uint64_t compute_symbol(const struct symbol *sym, const struct environment *env,
   case SYMBOL_REG:
   case SYMBOL_UNKNOWN:
   default:
-    assert(0);
+    fprintf(stderr, "cgen: internal error: cannot resolve symbol `%s' of kind %d.\n",
+	    sym->name, sym->kind);
+    abort();
   }
 }
 
