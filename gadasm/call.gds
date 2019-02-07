@@ -36,6 +36,8 @@ RET :=
     MOV rax,rcx ; restore ACC
     MOV rsp,rdx ; jump to new PC
 
+SYSCALL_BARE :=
+  ret &0x11724b
 
 // note that syscalls don't use the stack
 // all arguments must be on the stack
@@ -57,7 +59,7 @@ SYSCALL3 :=
   MOV rax,[rax] ; fetch arg3
   MOV rdx,rax   ; arg1,arg2,arg3 in place
   MOV rax,rcx   ; restore ACC (which is the syscall number)
-  ret &0x11724b ; perform syscall
+  SYSCALL_BARE  ; perform syscall
 
 // destroys rdi,rsi
 // rax <- rax & imm64

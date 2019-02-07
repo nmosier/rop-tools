@@ -89,6 +89,22 @@ int config_libc_syms(const char *s, const char **path) {
   return 0;
 }
 
+
+int config_stages(const char *str, int *stages) {
+  char *endptr;
+  long stages_tmp = strtol(str, &endptr, BASE10);
+  if (*endptr != '\0') {
+    fprintf(stderr, "ropc: -n: number of stages must be an integer\n");
+    return -1;
+  }
+  if (stages_tmp != 1 && stages_tmp != 2) {
+    fprintf(stderr, "ropc: -n: stage count %ld is not supported.\n", stages_tmp);
+    return -1;
+  }
+  *stages = (int) stages_tmp;
+  return 0;
+}
+
 #define DIRECTIVE_MAXLEN 16
 #define DIRECTIVE_LINELEN 128
 

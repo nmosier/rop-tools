@@ -28,6 +28,19 @@ MOV rdx,imm64 :=
     ret &0x12694a
     dq imm64
 
+MOV r8,imm64 :=
+    ret &0x129f06
+    dq imm64
+
+// destroys rax
+MOV r9,imm64 :=
+    MOV rax,imm64
+    MOV r9,rax
+
+MOV r10,imm64 :=
+    ret &0x109134
+    dq imm64
+
 /* moving registers */
 
 // destroys r12,r13,r14
@@ -113,6 +126,10 @@ CMOVB rax,rdi :=
 // destroys rax
 CMOVG rdx,rax :=
       ret &0xb72a1
+
+/* xors */
+XOR rdi,rdi :=
+  ret &0xa4bda
 
 //////////////////////////////////////////////
 

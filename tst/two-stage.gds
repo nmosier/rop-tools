@@ -1,0 +1,15 @@
+/* two-stage.gds -- an experimental two-stage ROP exploit + payload
+ * Nicholas Mosier 2019
+ */
+
+PAYLOAD_LENGTH := 0x2000
+PAYLOAD_FD := 3
+PAYLOAD_START := START
+
+#
+
+SETUP:
+  MAP_PAYLOAD
+
+START:
+  JMP $

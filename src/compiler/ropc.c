@@ -1,3 +1,7 @@
+/* ropc.c -- a ROP compiler
+ * Nicholas Mosier 2019
+ */
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -37,35 +41,32 @@ int main(int argc, char *argv[]) {
   const char *libc_sym_path = "libc.syms";
   FILE *libc_sym_file = NULL;
   struct libc_syms libc_syms;
-
+  int stages = ROPC_DEFAULT_STAGES;
 
   /* usage */
   const char *usage =
-    "usage: %s [-d] [-b origin_addr] [-p padding[,padding_val]] "	\
-    "        [-a anchor_symbol,anchor_addr] [-s syms_path] [-o outfile] " \
-    "        [infile...]\n"							\
+    "usage: %s [option...] [srcfile...]"				\
     "Compile ROP gadgets to shellcode.\n"				\
     "The options are:\n"						\
     "  -d                     Print debug information\n"		\
+    "  -n <int>               Number of stages (1 or 2, default is 1)\n" \
     "  -b <org>               Set origin address, i.e. the injection point\n" \
     "  -p <padsz>[,<padval>]  Set padding size (in bytes) before current frame's\n" \
     "                           return address, optionally followed by quad-word\n" \
     "                           padding value\n"			\
     "  -a <sym>,<addr>        Anchor libc symbol followed by address\n"	\
     "  -s <file>              Path to nm(1) dump of libc symbols\n"	\
-    "  -o <file>              Place compiled shellcode in file\n"	\
+    "  -o <file>[,<file2>]    Place compiled shellcode in file (or files, if 2-stage"\
+    "                           exploit)\n"					\
     "  -c <config_file>       Path to configuration file containing directives\n"\
     "                           followed by paramters. Supported directives:\n" \
     "                           .origin <addr>\n"			\
     "                           .padding <len> [<val>]\n"		\
     "                           .anchor <sym> <addr>\n"			\
     "                           .symbols <path>\n";
-
     
-  
-  
   /* get options */
-  const char *optstring = "o:hdb:p:a:s:c:";
+  const char *optstring = "o:hdb:p:a:s:c:n:";
   int optchar;
   while ((optchar = getopt(argc, argv, optstring)) >= 0) {
     switch (optchar) {
@@ -109,6 +110,12 @@ int main(int argc, char *argv[]) {
 	}
 	break;
       }
+
+    case 'n':
+      if (config_stages(optarg, &stages) < 0) {
+	exit(1);
+      }
+      break;
 
     case 'd': // debug flag
       debug = 1;
