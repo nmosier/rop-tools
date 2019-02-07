@@ -7,6 +7,7 @@
 #include <assert.h>
 
 #include "ropasm.h"
+#include "ropalg.h"
 #include "util.h"
 
 //LLVMDisasmContextRef dcr;
@@ -83,6 +84,24 @@ int instr_eq(const instr_t *lhs, const instr_t *rhs) {
     return 0;
   }
   return 1; // equal
+}
+
+int instr_match(const instr_t *instr, const struct instr_class *iclass) {
+  size_t mclen = instr->mclen;
+  if (mclen != iclass->mclen) {
+    return 0;
+  }
+
+  for (size_t i = 0; i < mclen; ++i) {
+    uint8_t instr_masked, class_masked;
+    instr_masked = instr->mc[i] & iclass->mcmask[i];
+    class_masked = iclass->mc[i] & iclass->mcmask[i];
+    if (instr_masked != class_masked) {
+      return 0;
+    }
+  }
+
+  return 1;
 }
 
 int instr_print(const instr_t *instr, FILE *f, int mode) {

@@ -20,6 +20,7 @@
 #define VERBOSE 1
 #define EXIT_FAILED 3 // exit status
 #define PHDRS_MAXSIZE 10
+#define GADGET_DEFAULTLEN 4
 
 /* defaults */
 #define GADGETS_OUTPATH_DEFAULT "gadgets.asm"
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]) {
   const char *input_path;
   const char *usage = "usage: %s [-o outpath] [-n gadgetlen] elf_file\n";
   char *gadgets_outpath = GADGETS_OUTPATH_DEFAULT;
-  int gadget_len = GADGET_MAXLEN;
+  int gadget_len = GADGET_DEFAULTLEN;
 
   /* infrastrutcural variables */
   Elf *elf;
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "%s: %s: %s\n", argv[0], gadgets_outpath, strerror(errno));
     goto cleanup;
   }
-  trie_print(trie, gadgetf, INSTR_PRINT_HEX|INSTR_PRINT_DISASM|INSTR_PRINT_ADDR);
+  trie_print(trie, gadgetf, INSTR_PRINT_HEX|INSTR_PRINT_DISASM);
   
   /* success */
   if (VERBOSE) {

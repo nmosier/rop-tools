@@ -137,7 +137,7 @@ int trie_print_aux(trie_node_t *node, FILE *f, const trie_val_t **prefix,
   /* base case: no children. */
   if (node->tn_children.cnt == 0 || prefix_cnt == TRIE_PRINT_MAXPREFIX) {
     /* print address */
-    // fprintf(f, "0x%lx:\n", node->tn_val.mcoff);
+    fprintf(f, "0x%lx:\n", node->tn_val.mcoff);
     
     /* print self */
     trie_val_print(&node->tn_val, f, mode);

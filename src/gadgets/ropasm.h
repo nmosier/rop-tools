@@ -34,6 +34,12 @@ typedef struct instrs {
 } instrs_t;
 
 
+typedef struct instr_class {
+  size_t mclen;
+  uint8_t mcmask[INSTR_MC_MAXLEN];
+  uint8_t mc[INSTR_MC_MAXLEN];
+} instr_class_t;
+
 
 LLVMDisasmContextRef ropasm_init();
 void ropasm_end(LLVMDisasmContextRef dcr);
@@ -42,6 +48,7 @@ void ropasm_end(LLVMDisasmContextRef dcr);
 void instr_init(instr_t *instr);
 int instr_disasm(instr_t *instr, LLVMDisasmContextRef dcr);
 int instr_eq(const instr_t *lhs, const instr_t *rhs);
+int instr_match(const instr_t *instr, const struct instr_class *iclass);
 int instr_print(const instr_t *instr, FILE *f, int mode);
 int instr_create(uint8_t *mc, size_t mclen, Elf64_Off mcoff,
 		 LLVMDisasmContextRef dcr, instr_t *instr);

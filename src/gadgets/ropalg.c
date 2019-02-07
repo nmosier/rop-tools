@@ -10,6 +10,17 @@
 #include "ropasm.h"
 #include "ropalg.h"
 
+static const instr_class_t GADGET_SUFFIX_RET = {1, {[0] = 0xff},
+						  {[0] = OPCODE_RET}};
+static const instr_class_t GADGET_SUFFIX_JMPREG =
+  { 2, {[0] = 0xff, [1] = 0xf8}, {[0] = 0xff, [1] = 0xe0} };
+
+
+// should be null-terminated
+static const instr_class_t *gadget_suffixes[] =
+  {&GADGET_SUFFIX_RET, &GADGET_SUFFIX_JMPREG, NULL};
+
+
 // gadget trie
 int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
 		 int maxlen) {
@@ -26,30 +37,46 @@ int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
   return trie_width(gadtrie);
 }
 
-int gadgets_buildfrom(uint8_t *ret, uint8_t *start, Elf64_Off offset,
-		      trie_t gadtrie, LLVMDisasmContextRef dcr, int maxlen);
+int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
+		      instr_t *suffix, trie_t gadtrie, LLVMDisasmContextRef dcr,
+		      int maxlen);
 int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr,
 			int maxlen) {
-  uint8_t *ret_it; // finds ret opcodes 
-  uint8_t *start;
+  uint8_t *mc_it; // finds ret opcodes
+  uint8_t *start, *end;
 
-    /* outer loop: find "ret" (0xc3) bytes */
+  /* outer loop: find "ret" (0xc3) bytes */
   start = bank->b_start;
+  end = start + bank->b_len;
   fprintf(stderr, "bank length = %zu\n", bank->b_len);
-  for (ret_it = start + bank->b_len - 1; ret_it >= start; --ret_it) {
-    /* find "ret" opcode */
-    while (ret_it >= start && *ret_it != OPCODE_RET) {
-      --ret_it;
-    }
-    if (ret_it < start) {
-      /* ret not found -- done */
-      break;
-    }
+  for (mc_it = start; mc_it < end; ++mc_it) {
+    instr_t suffix_instr;
+    const instr_class_t **suffix_class;
 
-    /* checks */
-    assert (*ret_it == OPCODE_RET);
-
-    if (gadgets_buildfrom(ret_it, start, bank->b_off, gadtrie, dcr, maxlen) < 0) {
+    /* find "ret" opcode, or other `interesting' suffix */
+    for (suffix_class = gadget_suffixes; *suffix_class; ++suffix_class) {
+      size_t class_mclen;
+    
+      class_mclen = (*suffix_class)->mclen;
+      suffix_instr.mclen = MIN(class_mclen, end - mc_it);
+      memcpy(suffix_instr.mc, mc_it, suffix_instr.mclen);
+    
+      if (instr_match(&suffix_instr, *suffix_class)) {
+    	break;
+      }
+    }
+    if (*suffix_class == NULL) {
+      /* no matching suffix instruction found; continuing */
+      continue;
+    }
+    
+    /* finish initializing suffix instruction */
+    suffix_instr.mcoff = mc_it - start + bank->b_off;
+    int disasm_status = instr_disasm(&suffix_instr, dcr);
+    assert(disasm_status == INSTR_OK);
+    
+    if (gadgets_buildfrom(mc_it, start, bank->b_off, &suffix_instr, gadtrie, dcr,
+			  maxlen) < 0) {
       fprintf(stderr, "gadgets_buildfrom: internal error\n");
       return -1;
     }    
@@ -58,10 +85,10 @@ int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
   return 0;
 }
 
-static const instr_t INSTR_RET = {{[0] = OPCODE_RET}, 1, 0, {0}};
+
 
 int gadget_boundary(instr_t *instr) {
-  return instr_eq(instr, &INSTR_RET);
+  return instr_match(instr, &GADGET_SUFFIX_RET);
 }
 
 void gadget_trunc_prefixes(instrs_t *gadget);
@@ -129,21 +156,24 @@ int gadgets_buildfrom_aux(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
 			  trie_t gadtrie, LLVMDisasmContextRef dcr,
 			  int maxlen, instrs_t *gadget);
 int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
-		      trie_t gadtrie, LLVMDisasmContextRef dcr, int maxlen) {
+		      instr_t *suffix, trie_t gadtrie, LLVMDisasmContextRef dcr,
+		      int maxlen) {
   instrs_t gadget;
   instrs_init(&gadget);
 
   /* checks */
-  assert (ret_it[0] == 0xc3);
   if (ret_it == start) {
     return 0;
   }
 
+  /* initialize gadget with given suffix */
+  instrs_push(suffix, &gadget);
+
   /* init gadget with ret */
-  instr_t ret = {{[0] = OPCODE_RET}, 1, ret_it - start + offset, {0}};
-  instr_disasm(&ret, dcr);
-  instrs_push(&ret, &gadget);
-  
+  //instr_t ret = {{[0] = OPCODE_RET}, 1, ret_it - start + offset, {0}};
+  //instr_disasm(&ret, dcr);
+  //instrs_push(&ret, &gadget);
+  //
   return gadgets_buildfrom_aux(ret_it - 1, start, offset, gadtrie, dcr, maxlen,
 			       &gadget);
 }
@@ -172,37 +202,37 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
   for (instr_len = 1; instr_len <= INSTR_MC_MAXLEN
 	 && instr_it - instr_len + 1 >= start; ++instr_len) {
     memcpy(instr.mc, instr_it - instr_len + 1, instr_len);
-      instr.mclen = instr_len;
-      /* compute the instruction offset using this mathematical mess */
-      instr.mcoff = instr_it - start - instr_len + offset + 1;
+    instr.mclen = instr_len;
+    /* compute the instruction offset using this mathematical mess */
+    instr.mcoff = instr_it - start - instr_len + offset + 1;
 
-      /* check if instruction is boundary */
-      if (gadget_boundary(&instr)) {
-	continue;
-      }
+    /* check if instruction is boundary */
+    if (gadget_boundary(&instr)) {
+      continue;
+    }
       
-      /* attempt disassembly */
-      if (instr_disasm(&instr, dcr) != INSTR_OK
-	  || instr.disasm[0] == 0) {
-	continue;
-      }
+    /* attempt disassembly */
+    if (instr_disasm(&instr, dcr) != INSTR_OK
+	|| instr.disasm[0] == 0) {
+      continue;
+    }
       
-      /* found valid instruction;
-       * generate all subgadgets with this instruction */
-      /* append instruction to instructions list */
-      if (instrs_push(&instr, gadget) < 0) {
-	return -1; // internal error
-      }
+    /* found valid instruction;
+     * generate all subgadgets with this instruction */
+    /* append instruction to instructions list */
+    if (instrs_push(&instr, gadget) < 0) {
+      return -1; // internal error
+    }
       
-      /* find all subgadgets */
-      if (gadgets_buildfrom_aux(instr_it - instr_len, start, offset, gadtrie,
-				dcr, maxlen, gadget) < 0) {
-	return -1; // internal error
-      }
+    /* find all subgadgets */
+    if (gadgets_buildfrom_aux(instr_it - instr_len, start, offset, gadtrie,
+			      dcr, maxlen, gadget) < 0) {
+      return -1; // internal error
+    }
       
-      /* pop off instruction and continue search */
-      instrs_pop(NULL, gadget);
+    /* pop off instruction and continue search */
+    instrs_pop(NULL, gadget);
   }
-    
+  
   return 0;
 }
