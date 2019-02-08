@@ -16,6 +16,7 @@
 #include "ropasm.h"
 #include "ropalg.h"
 #include "ropbank.h"
+#include "jmpalg.h"
 
 #define VERBOSE 1
 #define EXIT_FAILED 3 // exit status
@@ -139,6 +140,9 @@ int main(int argc, char *argv[]) {
     goto cleanup;
   }
   trie_print(trie, gadgetf, INSTR_PRINT_HEX|INSTR_PRINT_DISASM);
+
+  /* find indirect jumps */
+  springs_find(&banks, trie, dcr, gadget_len);
   
   /* success */
   if (VERBOSE) {

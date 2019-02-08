@@ -143,6 +143,10 @@ int instrs_push(instr_t *instr, instrs_t *instrs) {
   return 0;
 }
 
+int instrs_add(instr_t *instr, instrs_t *instrs) {
+  return instrs_push(instr, instrs);
+}
+
 
 int instrs_pop(instr_t *instr, instrs_t *instrs) {
   if (instrs->cnt == 0) {

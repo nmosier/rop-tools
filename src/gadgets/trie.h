@@ -16,14 +16,6 @@ typedef instr_t trie_val_t;
 
 #define TRIE_PRINT_MAXPREFIX 256
 
-/*
-typedef struct trie_val {
-  uint8_t *tv_buf;
-  size_t tv_len;
-  Elf64_Off tv_off;
-} trie_val_t;
-*/
-
 struct trie_node;
 typedef struct trie_nodes {
   struct trie_node **arr;
