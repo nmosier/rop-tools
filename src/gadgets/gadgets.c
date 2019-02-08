@@ -16,7 +16,6 @@
 #include "ropasm.h"
 #include "ropalg.h"
 #include "ropbank.h"
-#include "jmpalg.h"
 
 #define VERBOSE 1
 #define EXIT_FAILED 3 // exit status
@@ -33,6 +32,7 @@ int main(int argc, char *argv[]) {
   const char *usage = "usage: %s [-o outpath] [-n gadgetlen] elf_file\n";
   char *gadgets_outpath = GADGETS_OUTPATH_DEFAULT;
   int gadget_len = GADGET_DEFAULTLEN;
+  int gadgets_find_mode = GADGETS_FIND_RETS;
 
   /* infrastrutcural variables */
   Elf *elf;
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   FILE *gadgetf;
   
   /* parse arguments */
-  const char *optstring = "o:d:hn:";
+  const char *optstring = "o:d:hn:rj";
   int optc;
   int optvalid = 1;
   char *endptr;
@@ -67,6 +67,13 @@ int main(int argc, char *argv[]) {
       }
       break;
 
+    case 'r': // find gadgets ending with `ret'
+      gadgets_find_mode |= GADGETS_FIND_RETS;
+      break;
+    case 'j': // find gadgets ending with `jmp r*x'
+      gadgets_find_mode |= GADGETS_FIND_IJMPS;
+      break;
+      
     case 'h':
       fprintf(stderr, usage, argv[0]);
       optvalid = 0;
@@ -128,7 +135,8 @@ int main(int argc, char *argv[]) {
 
   /* find gadgets -- main algorithm */
   int gadgets_found;
-  if ((gadgets_found = gadgets_find(&banks, trie, dcr, gadget_len)) < 0) {
+  if ((gadgets_found = gadgets_find(&banks, trie, dcr, gadget_len,
+				    gadgets_find_mode)) < 0) {
     perror("gadgets_find");
     goto cleanup;
   }
@@ -142,7 +150,7 @@ int main(int argc, char *argv[]) {
   trie_print(trie, gadgetf, INSTR_PRINT_HEX|INSTR_PRINT_DISASM);
 
   /* find indirect jumps */
-  springs_find(&banks, trie, dcr, gadget_len);
+  //springs_find(&banks, trie, dcr, gadget_len);
   
   /* success */
   if (VERBOSE) {

@@ -10,9 +10,6 @@
 #include "ropalg.h"
 #include "util.h"
 
-//LLVMDisasmContextRef dcr;
-
-// LLVMDisasmDispose()
 #define ROPASM_TRIPLENAME "x86_64-unknown-linux-gnu"
 
 LLVMDisasmContextRef ropasm_init() {
@@ -160,4 +157,97 @@ int instrs_pop(instr_t *instr, instrs_t *instrs) {
   --instrs->cnt;
   
   return 0;
+}
+
+
+
+ssize_t instr_class_find_inbank(rop_bank_t *bank, const instr_class_t *iclass,
+				instrs_t *instrs, LLVMDisasmContextRef dcr,
+				int (*op)(instr_t *)) {
+  uint8_t *start, *end, *it;
+  instr_t instr;
+  int disasm_result;
+  Elf64_Off offset = bank->b_off;
+
+  start = bank->b_start;
+  end = start + bank->b_len;
+  instr_init(&instr);
+  instr.mclen = iclass->mclen;
+
+  for (it = start; it + instr.mclen <= end; ++it) {
+    memcpy(instr.mc, it, instr.mclen);
+    instr.mcoff = offset + it - start;
+    if (instr_match(&instr, iclass)) {
+      /* found instruction that matches class */
+      disasm_result = instr_disasm(&instr, dcr);
+      assert(disasm_result == INSTR_OK);
+
+      /* call operation (if non-NULL) */
+      if (op && op(&instr) < 0) {
+	fprintf(stderr, "instr_class_find_inbank: instruction-wise operation " \
+		"encountered an error.\n");
+	return -1;
+      }
+
+      /* add instruction to list */
+      if (instrs_add(&instr, instrs) < 0) {
+	perror("instrs_add");
+	return -1; // internal error
+      }
+    }
+  }
+
+  return instrs->cnt;
+}
+
+int rjmps_find_inbank(rop_bank_t *bank, instrs_t *rjmps, LLVMDisasmContextRef dcr) {
+  /* find 8-bit jumps */
+  if (instr_class_find_inbank(bank, &CLASS_JUMP_RELATIVE8, rjmps, dcr,
+			      rjmp_offset8) < 0) {
+    return -1;
+  }
+  /* find 32-bit jumps */
+  if (instr_class_find_inbank(bank, &CLASS_JUMP_RELATIVE32, rjmps, dcr,
+			      rjmp_offset32) < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+int rjmp_offset8(instr_t *rjmp8) {
+  assert(instr_match(rjmp8, &CLASS_JUMP_RELATIVE8));
+  rjmp8->spec.jmpdst = rjmp8->mcoff + *((int8_t *) (rjmp8->mc + 1))
+    + rjmp8->mclen;
+  rjmp8->flags |= INSTR_FLAGS_SPEC;
+  //  printf("0x%lx:\n", rjmp8->spec.jmpdst);
+  return 0;
+}
+
+int rjmp_offset32(instr_t *rjmp32) {
+  assert(instr_match(rjmp32, &CLASS_JUMP_RELATIVE32));
+  rjmp32->spec.jmpdst  = rjmp32->mcoff + *((int32_t *) (rjmp32->mc + 1))
+    + rjmp32->mclen;
+  rjmp32->flags |= INSTR_FLAGS_SPEC;
+  //printf("0x%lx:\n", rjmp32->spec.jmpdst);
+  return 0;
+}
+
+int rjmps_dstcmp(const instr_t *lhs, const instr_t *rhs) {
+  assert((lhs->flags & rhs->flags & INSTR_FLAGS_SPEC));
+  if (lhs->spec.jmpdst == rhs->spec.jmpdst) {
+    return 0;
+  } else if (lhs->spec.jmpdst > rhs->spec.jmpdst) {
+    return 1;
+  } else {
+    return -1;
+  }
+}
+
+void rjmps_dump(const instrs_t *rjmps, FILE *f) {
+  instr_t *rjmp;
+
+  for (rjmp = rjmps->arr; rjmp < rjmps->arr + rjmps->cnt; ++rjmp) {
+    fprintf(f, "0x%lx -> 0x%lx\t%s\n", rjmp->mcoff, rjmp->spec.jmpdst, rjmp->disasm);
+  }
 }

@@ -15,7 +15,5 @@ int springs_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
 			int maxlen);
 int springs_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
 		 int maxlen);
-ssize_t instr_class_find_inbank(rop_bank_t *bank, const instr_class_t *iclass,
-				instrs_t *instrs, LLVMDisasmContextRef dcr);
 
 #endif

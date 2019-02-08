@@ -22,14 +22,6 @@
 //
 //
 
-static const struct instr_class CLASS_JUMP_INDIRECT =
-  {2, {[0] = 0xff, [1] = 0xf8}, {[0] = 0xff, [1] = 0xe0}};
-
-static const struct instr_class CLASS_JUMP_RELATIVE8 =
-  {2, {[0] = 0xff}, {[0] = 0xeb}};
-
-static const struct instr_class CLASS_JUMP_RELATIVE32 =
-  {5, {[0] = 0xff}, {[0] = 0xe9}};
 
 int springs_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
 		 int maxlen) {
@@ -72,31 +64,4 @@ int springs_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
   fprintf(stderr, "found %ld relative jumps\n", cnt + cnt2);
 
   return 0;
-}
-
-
-ssize_t instr_class_find_inbank(rop_bank_t *bank, const instr_class_t *iclass,
-				instrs_t *instrs, LLVMDisasmContextRef dcr) {
-  uint8_t *start, *end, *it;
-  instr_t instr;
-  int disasm_result;
-
-  start = bank->b_start;
-  end = start + bank->b_len;
-  instr.mclen = iclass->mclen;
-
-  for (it = start; it + instr.mclen <= end; ++it) {
-    memcpy(instr.mc, it, instr.mclen);
-    if (instr_match(&instr, iclass)) {
-      /* found instruction that matches class -- disassemble & add to list */
-      disasm_result = instr_disasm(&instr, dcr);
-      assert(disasm_result == INSTR_OK);
-      if (instrs_add(&instr, instrs) < 0) {
-	perror("instrs_add");
-	return -1; // internal error
-      }
-    }
-  }
-
-  return instrs->cnt;
 }
