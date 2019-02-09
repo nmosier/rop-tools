@@ -32,7 +32,8 @@ int main(int argc, char *argv[]) {
   const char *usage = "usage: %s [-o outpath] [-n gadgetlen] elf_file\n";
   char *gadgets_outpath = GADGETS_OUTPATH_DEFAULT;
   int gadget_len = GADGET_DEFAULTLEN;
-  int gadgets_find_mode = GADGETS_FIND_RETS;
+  int gadgets_find_mode_default = GADGETS_FIND_RETS;
+  int gadgets_find_mode = 0;
 
   /* infrastrutcural variables */
   Elf *elf;
@@ -92,6 +93,9 @@ int main(int argc, char *argv[]) {
   if (optind == argc) {
     fprintf(stderr, "%s: no input file specified.\n", argv[0]);
     exit(2);
+  }
+  if (gadgets_find_mode == 0) {
+    gadgets_find_mode = gadgets_find_mode_default;
   }
 
   /* set source file */
