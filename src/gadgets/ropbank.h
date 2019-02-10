@@ -5,6 +5,8 @@
 #ifndef __ROPBANK_H
 #define __ROPBANK_H
 
+#include <libelf.h>
+
 typedef struct {
   uint8_t *b_start;
   uint64_t b_len;
