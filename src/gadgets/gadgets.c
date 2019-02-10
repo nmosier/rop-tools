@@ -29,7 +29,15 @@ int main(int argc, char *argv[]) {
   /* argument variables */
   int exitno;
   const char *input_path;
-  const char *usage = "usage: %s [-o outpath] [-n gadgetlen] elf_file\n";
+  const char *usage =
+    "usage: %s [option...] elf_file\n"		\
+    "Options:\n"				\
+    "-o <outpath>  where to write the gadget dump to\n"		\
+    "-n <length>   maximum length of the gadgets found\n"	\
+    "-r            find gadgets that end in `ret'\n"		\
+    "-j            find gadgets that end in `jmp <reg>'\n"	\
+    "-h            print this description\n";    
+  
   char *gadgets_outpath = GADGETS_OUTPATH_DEFAULT;
   int gadget_len = GADGET_DEFAULTLEN;
   int gadgets_find_mode_default = GADGETS_FIND_RETS;
