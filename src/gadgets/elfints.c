@@ -16,66 +16,36 @@
 #include "ropelf.h"
 #include "ropbank.h"
 #include "util.h"
+#include "elfints.h"
 
-#define INTBITS_DEFAULT  32
-#define INTSIGNED_DEFAULT 0
-#define BASE_10          10
-
-struct elfints_config {
-  int intbits;
-  int intsigned;
-  int align;
-  int offset;
-  int verbose;
-  const char *inpath;
-  const char *outpath;
-};
-
-struct elfints_state {
-  int elf_fd;
-  FILE *ints_f;
-  Elf *elf;
-  rop_banks_t banks;
-};
-
-int elfints_getopts(int argc, char *argv[], struct elfints_config *config);
-void elfints_state_init(struct elfints_state *state);
-int elfints_state_cleanup(struct elfints_state *state);
+int elfints_findints(const struct elfints_config *conf,
+		     const struct elfints_state *st);
+void elfints_confdefaults(struct elfints_config *conf);
 
 int main(int argc, char *argv[]) {
   int exitno = 2;
 
   /* parse arguments */
   struct elfints_config config;
-  memset(&config, 0, sizeof(config));
+  elfints_confdefaults(&config);
   if (elfints_getopts(argc, argv, &config) < 0) {
     exit(1); // invalid options
   }
 
   struct elfints_state state;
-  elfints_state_init(&state);
-
-  /* open files */
-  if ((state.elf_fd = open(config.inpath, O_RDONLY)) < 0) {
-    fprintf(stderr, "%s: %s: %s\n", argv[0], config.inpath, strerror(errno));
+  if (elfints_state_setup(&config, &state) < 0) {
     goto cleanup;
   }
-  if (config.outpath) {
-    if ((state.ints_f = fopen(config.outpath, "w")) == NULL) {
-      fprintf(stderr, "%s: %s: %s\n", argv[0], config.outpath, strerror(errno));
-      goto cleanup;
-    }
-  } else {
-    /* use stdout */
-    state.ints_f = stdout;
+
+  /* find integers */
+  if (elfints_findints(&config, &state) < 0) {
+    goto cleanup;
   }
-
   
-
-
+  
   /* success */
   exitno = 0;
-  
+
  cleanup:
   if (elfints_state_cleanup(&state) < 0) {
     exitno = 2;
@@ -84,8 +54,30 @@ int main(int argc, char *argv[]) {
   exit(exitno);
 }
 
+void elfints_confdefaults(struct elfints_config *conf) {
+  conf->intbits = INTBITS_DEFAULT;
+  conf->intsigned = INTSIGNED_DEFAULT;
+  conf->align = ALIGN_DEFAULT;
+  conf->offset = OFFSET_DEFAULT;
+  conf->verbose = 0;
+  conf->inpath = NULL;
+  conf->outpath = NULL;
+}
+
 int elfints_getopts(int argc, char *argv[], struct elfints_config *conf) {
-  const char *usage = "usage: %s [-n bits] [-o outfile] [-v] elf_file\n";
+  const char *usage =
+    "usage: %s [option...] elf_file\n"		\
+    "elfints -- find integers in ELF executables\n"	\
+    "Options:\n"					\
+    "  -o <outfile>        where to dump integers\n"		\
+    "  -n <int>            size of integers to find, in bits\n"	\
+    "  -u                  interpret integers as unsigned\n"		\
+    "  -s                  interpret integers as signed (default)\n"	\
+    "  -a <mult>[,<off>]   only find integers at _mult_ byte alignment\n"
+    "                        at an offset of _off_ bytes\n"	\
+    "                        (defaults: _mult_=1, _off_=0)\n"	\
+    "  -v                  verbose mode\n"			\
+    "  -h                  display this text\n";
   const char *optstring = "o:n:hvusa:";
   int optc;
   int optvalid = 0; // 0 if valid, -1 if invalid
@@ -99,8 +91,18 @@ int elfints_getopts(int argc, char *argv[], struct elfints_config *conf) {
       break;
       
     case 'n':
-      if (parse_optarg_int(optarg, BASE_10, argv[0], optc, &conf->intbits) < 0) {
-	optvalid = -1;
+      {
+	int intbits;
+	if (parse_optarg_int(optarg, BASE_10, argv[0], optc, &intbits) < 0) {
+	  optvalid = -1;
+	}
+	if (intbits_valid(intbits)) {
+	  conf->intbits = intbits;
+	} else {
+	  optvalid = -1;
+	  fprintf(stderr, "%s: -n: %d-bit integers not supported\n",
+		  argv[0], intbits);
+	}
       }
       break;
 
@@ -182,3 +184,54 @@ int elfints_state_cleanup(struct elfints_state *state) {
 
   return retv;
 }
+
+
+int elfints_state_setup(const struct elfints_config *config,
+			struct elfints_state *state) {
+    /* open files */
+  if ((state->elf_fd = open(config->inpath, O_RDONLY)) < 0) {
+    fprintf(stderr, "elfints: %s: %s\n", config->inpath, strerror(errno));
+    return -1;
+  }
+  if (config->outpath) {
+    if ((state->ints_f = fopen(config->outpath, "w")) == NULL) {
+      fprintf(stderr, "elfints: %s: %s\n", config->outpath, strerror(errno));
+      return -1;
+    }
+  } else {
+    /* use stdout */
+    state->ints_f = stdout;
+  }
+
+  /* setup elf & bank structures */
+  if ((state->elf = ropelf_begin(state->elf_fd)) == NULL) {
+    return -1;
+  }
+  if (banks_create(state->elf_fd, state->elf, &state->banks) < 0) {
+    fprintf(stderr, "elfints: failed to create banks\n");
+    return -1;
+  }
+
+  return 0;
+}
+
+
+int intbits_valid(int bits) {
+  switch (bits) {
+  case 8: return 1;
+  case 16: return 1;
+  case 32: return 1;
+  case 64: return 1;
+  default: return 0;
+  }
+}
+
+/*
+int elfints_findints(const rop_banks_t *banks) {
+  if (banks->cnt != 1) {
+    fprintf(stderr, "elfints: warning: printing results for %d banks", banks->cnt);
+  }
+
+  
+}
+*/
