@@ -5,6 +5,7 @@
 #include "trie.h"
 #include "ropbank.h"
 #include "gadgets.h"
+#include "ropaddr.h"
 
 #define OPCODE_RET 0xc3
 //#define MASK_RET   0xf7
@@ -24,6 +25,7 @@
 int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
 		 const struct gadgets_config *conf);
 int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr,
+			struct rop_addrs *ok_addrs,
 			const struct gadgets_config *conf);
 int gadget_boundary(instr_t *instr);
 void gadget_trunc(instrs_t *gadget);
@@ -31,14 +33,16 @@ int gadget_boring(instrs_t *gadget);
 
 int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
 		      instr_t *suffix, trie_t gadtrie, instrs_t *rjmps,
-		      LLVMDisasmContextRef dcr,
+		      LLVMDisasmContextRef dcr, struct rop_addrs *ok_addrs,
 		      const struct gadgets_config *conf);
 int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
 			  trie_t gadtrie, instrs_t *rjmps, LLVMDisasmContextRef dcr,
+			  struct rop_addrs *ok_addrs,
 			  const struct gadgets_config *conf, instrs_t *gadget);
 int gadgets_buildfrom_rjmps(uint8_t *dst, uint8_t *start, Elf64_Off offset,
 			    trie_t gadtrie, instrs_t *rjmps,
-			    LLVMDisasmContextRef dcr, const struct gadgets_config *conf,
+			    LLVMDisasmContextRef dcr, struct rop_addrs *ok_addrs,
+			    const struct gadgets_config *conf,
 			    instrs_t *gadget);
 
 #endif

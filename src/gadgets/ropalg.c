@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 #include <llvm-c/Disassembler.h>
 
 
@@ -41,16 +42,23 @@ static const masked_instr_class_t gadget_suffixes[] =
 
 
 
-  //int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
-  //		 int maxlen, int mode) {
 int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
 		 const struct gadgets_config *conf) {
   rop_bank_t *bank_it;
   size_t nbanks = banks->len;
   size_t i;
+  struct rop_addrs *ok_addrs = NULL;
+
+  /* initialize set of allowable addresses, if given */
+  if (conf->addr_path) {
+    if ((ok_addrs = rop_addrs_new(conf->addr_path)) == NULL) {
+      fprintf(stderr, "gadgets: %s: %s\n", conf->addr_path, strerror(errno));
+      return -1;
+    }
+  }
 
   for (i = 0, bank_it = banks->arr; i < nbanks; ++i, ++bank_it) {
-    if (gadgets_find_inbank(bank_it, gadtrie, dcr, conf) < 0) {
+    if (gadgets_find_inbank(bank_it, gadtrie, dcr, ok_addrs, conf) < 0) {
       return -1;
     }
   }
@@ -58,9 +66,8 @@ int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
   return trie_width(gadtrie);
 }
 
-//int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr,
-//			int maxlen, int mode) {
 int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr,
+			struct rop_addrs *ok_addrs,
 			const struct gadgets_config *conf) {
   uint8_t *mc_it; // finds ret opcodes
   uint8_t *start, *end;
@@ -111,7 +118,7 @@ int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
     assert(disasm_status == INSTR_OK);
     
     if (gadgets_buildfrom(mc_it, start, bank->b_off, &suffix_instr, gadtrie, &rjmps,
-			  dcr, conf) < 0) {
+			  dcr, ok_addrs, conf) < 0) {
       fprintf(stderr, "gadgets_buildfrom: internal error\n");
       return -1;
     }    
@@ -185,7 +192,7 @@ int gadget_boring(instrs_t *gadget) {
 /* build from one gadget suffix */
 int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
 		      instr_t *suffix, trie_t gadtrie, instrs_t *rjmps,
-		      LLVMDisasmContextRef dcr,
+		      LLVMDisasmContextRef dcr, struct rop_addrs *ok_addrs,
 		      const struct gadgets_config *conf) {
   instrs_t gadget;
   instrs_init(&gadget);
@@ -199,11 +206,12 @@ int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
   instrs_push(suffix, &gadget);
 
   return gadgets_buildfrom_aux(ret_it - 1, start, offset, gadtrie, rjmps, dcr,
-			       conf, &gadget);
+			       ok_addrs, conf, &gadget);
 }
 
 int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
 			  trie_t gadtrie, instrs_t *rjmps, LLVMDisasmContextRef dcr,
+			  struct rop_addrs *ok_addrs,
 			  const struct gadgets_config *conf, instrs_t *gadget) {
   instr_t instr;
   size_t instr_len;
@@ -212,8 +220,18 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
   size_t savcnt = gadget->cnt;
   gadget_trunc(gadget);
   if (!gadget_boring(gadget)) {
-    if (trie_addval(gadget->arr, gadget->cnt, gadtrie) < 0) {
-      return -1; // internal error 
+    /* check if instruction address is allowed */
+    int ok = 1;
+    if (ok_addrs) {
+      Elf64_Off addr = gadget->arr[gadget->cnt-1].mcoff;
+      ok = rop_addrs_has(addr, ok_addrs);
+    }
+
+    /* add address to trie */
+    if (ok) {
+      if (trie_addval(gadget->arr, gadget->cnt, gadtrie) < 0) {
+	return -1; // internal error 
+      }
     }
   }
   gadget->cnt = savcnt;
@@ -229,6 +247,7 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
     instr.mclen = instr_len;
     /* compute the instruction offset using this mathematical mess */
     instr.mcoff = instr_it - start - instr_len + offset + 1;
+
 
     /* check if instruction is boundary */
     if (gadget_boundary(&instr)) {
@@ -250,13 +269,13 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
       
     /* find all subgadgets (contiguous) */
     if (gadgets_buildfrom_aux(instr_it - instr_len, start, offset, gadtrie,
-			      rjmps, dcr, conf, gadget) < 0) {
+			      rjmps, dcr, ok_addrs, conf, gadget) < 0) {
       return -1; // internal error
     }
 
     /* find all subgadgets (relative jumps to this instruction) */
     if (gadgets_buildfrom_rjmps(instr_it - instr_len + 1, start, offset, gadtrie,
-    				rjmps, dcr, conf, gadget) < 0) {
+    				rjmps, dcr, ok_addrs, conf, gadget) < 0) {
       return -1;
     }
     
@@ -271,7 +290,8 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
 // dst is pointer to 1st byte of instruction that should be jump destination
 int gadgets_buildfrom_rjmps(uint8_t *dst, uint8_t *start, Elf64_Off offset,
 			    trie_t gadtrie, instrs_t *rjmps,
-			    LLVMDisasmContextRef dcr, const struct gadgets_config *conf,
+			    LLVMDisasmContextRef dcr, struct rop_addrs *ok_addrs,
+			    const struct gadgets_config *conf,
 			    instrs_t *gadget) {
   instr_t dst_instr;
   instr_t *src_rjmp;
@@ -292,7 +312,7 @@ int gadgets_buildfrom_rjmps(uint8_t *dst, uint8_t *start, Elf64_Off offset,
   
   /* build from the soucre rjump instruction */
   return gadgets_buildfrom_aux(start + (src_rjmp->mcoff - offset) - 1, start,
-			       offset, gadtrie, rjmps, dcr, conf, gadget);
+			       offset, gadtrie, rjmps, dcr, ok_addrs, conf, gadget);
 }
 
 
