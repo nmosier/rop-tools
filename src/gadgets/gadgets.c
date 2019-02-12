@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
 void gadgets_config_setdefaults(struct gadgets_config *conf) {
   conf->elf_path = NULL;
   conf->gadgets_path = GADGETS_PATH_DEFAULT;
+  conf->addr_path = NULL;
   conf->gadget_len = GADGET_LEN_DEFAULT;
   conf->gadgets_find_mode = GADGETS_FIND_RETS;
 }
