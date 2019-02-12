@@ -16,33 +16,39 @@
 #include "ropasm.h"
 #include "ropalg.h"
 #include "ropbank.h"
+#include "gadgets.h"
 
 #define VERBOSE 1
 #define EXIT_FAILED 3 // exit status
 #define PHDRS_MAXSIZE 10
-#define GADGET_DEFAULTLEN 4
 
 /* defaults */
-#define GADGETS_OUTPATH_DEFAULT "gadgets.asm"
+#define GADGET_LEN_DEFAULT 4
+#define GADGETS_PATH_DEFAULT "gadgets.asm"
+
+
+struct gadgets_state {
+  Elf *elf;
+  rop_banks_t banks;
+  LLVMDisasmContextRef dcr;
+  int elf_fd;
+  FILE *gadget_f;
+};
+
+
+void gadgets_config_setdefaults(struct gadgets_config *conf);
+int gadgets_getopts(int argc, char *argv[], struct gadgets_config *conf);
 
 int main(int argc, char *argv[]) {
-  /* argument variables */
   int exitno;
-  const char *input_path;
-  const char *usage =
-    "usage: %s [option...] elf_file\n"		\
-    "Options:\n"				\
-    "-o <outpath>  where to write the gadget dump to\n"		\
-    "-n <length>   maximum length of the gadgets found\n"	\
-    "-r            find gadgets that end in `ret'\n"		\
-    "-j            find gadgets that end in `jmp <reg>'\n"	\
-    "-h            print this description\n";    
-  
-  char *gadgets_outpath = GADGETS_OUTPATH_DEFAULT;
-  int gadget_len = GADGET_DEFAULTLEN;
-  int gadgets_find_mode_default = GADGETS_FIND_RETS;
-  int gadgets_find_mode = 0;
+  struct gadgets_config conf;
 
+  /* get configuration */
+  gadgets_config_setdefaults(&conf);
+  if (gadgets_getopts(argc, argv, &conf) < 0) {
+    exit(1); // invalid options; exiting
+  }
+  
   /* infrastrutcural variables */
   Elf *elf;
   rop_banks_t banks;
@@ -50,84 +56,29 @@ int main(int argc, char *argv[]) {
   LLVMDisasmContextRef dcr;
 
   /* files */
-  int input_fd;
-  FILE *gadgetf;
+  int elf_fd;
+  FILE *gadget_f;
   
-  /* parse arguments */
-  const char *optstring = "o:d:hn:rj";
-  int optc;
-  int optvalid = 1;
-  char *endptr;
-  long int gadget_len_tmp;
-  while ((optc = getopt(argc, argv, optstring)) >= 0) {
-    switch (optc) {
-    case 'o':
-      gadgets_outpath = optarg;
-      break;
-
-    case 'n':
-      gadget_len_tmp = strtol(optarg, &endptr, 10);
-      if (*endptr != '\0' || gadget_len_tmp <= 0) {
-	fprintf(stderr, "%s: -n: gadget length must be a positive integer\n",
-		argv[0]);
-	optvalid = 0;
-      } else {
-	gadget_len = gadget_len_tmp;
-      }
-      break;
-
-    case 'r': // find gadgets ending with `ret'
-      gadgets_find_mode |= GADGETS_FIND_RETS;
-      break;
-    case 'j': // find gadgets ending with `jmp r*x'
-      gadgets_find_mode |= GADGETS_FIND_IJMPS;
-      break;
-      
-    case 'h':
-      fprintf(stderr, usage, argv[0]);
-      optvalid = 0;
-      break;
-
-    default:
-      optvalid = 0;
-      break;
-    }
-  }
-
-  /* check validity of options */
-  if (!optvalid) {
-    exit(1);
-  }
-  if (optind == argc) {
-    fprintf(stderr, "%s: no input file specified.\n", argv[0]);
-    exit(2);
-  }
-  if (gadgets_find_mode == 0) {
-    gadgets_find_mode = gadgets_find_mode_default;
-  }
-
-  /* set source file */
-  input_path = argv[optind];
   
   /* initialization */
-  input_fd = -1;
-  gadgetf = NULL;
+  elf_fd = -1;
+  gadget_f = NULL;
   exitno = EXIT_FAILED;
   banks_init(&banks);
   trie = TRIE_ERROR;
   dcr = NULL;
 
   /* open file to parse */
-  if ((input_fd = open(input_path, O_RDONLY, 0)) < 0) {
-    fprintf(stderr, "%s: %s: %s\n", argv[0], input_path, strerror(errno));
+  if ((elf_fd = open(conf.elf_path, O_RDONLY, 0)) < 0) {
+    fprintf(stderr, "%s: %s: %s\n", argv[0], conf.elf_path, strerror(errno));
     exit(3);
   }
 
-  if ((elf = ropelf_begin(input_fd)) == NULL) {
+  if ((elf = ropelf_begin(elf_fd)) == NULL) {
     goto cleanup;
   }
 
-  if (banks_create(input_fd, elf, &banks) < 0) {
+  if (banks_create(elf_fd, elf, &banks) < 0) {
     perror("banks_create");
     goto cleanup;
   }
@@ -147,23 +98,19 @@ int main(int argc, char *argv[]) {
 
   /* find gadgets -- main algorithm */
   int gadgets_found;
-  if ((gadgets_found = gadgets_find(&banks, trie, dcr, gadget_len,
-				    gadgets_find_mode)) < 0) {
+  if ((gadgets_found = gadgets_find(&banks, trie, dcr, &conf)) < 0) {
     perror("gadgets_find");
     goto cleanup;
   }
   fprintf(stderr, "gadgets found: %d\n", gadgets_found);
 
   /* dump results */ 
-  if ((gadgetf = fopen(gadgets_outpath, "w")) == NULL) {
-    fprintf(stderr, "%s: %s: %s\n", argv[0], gadgets_outpath, strerror(errno));
+  if ((gadget_f = fopen(conf.gadgets_path, "w")) == NULL) {
+    fprintf(stderr, "%s: %s: %s\n", argv[0], conf.gadgets_path, strerror(errno));
     goto cleanup;
   }
-  trie_print(trie, gadgetf, INSTR_PRINT_HEX|INSTR_PRINT_DISASM);
+  trie_print(trie, gadget_f, INSTR_PRINT_HEX|INSTR_PRINT_DISASM);
 
-  /* find indirect jumps */
-  //springs_find(&banks, trie, dcr, gadget_len);
-  
   /* success */
   if (VERBOSE) {
     fprintf(stderr, "success!\n");
@@ -173,14 +120,14 @@ int main(int argc, char *argv[]) {
   /* cleanup */
  cleanup:
   ropelf_end(elf);
-  if (input_fd >= 0) {
-    if (close(input_fd) < 0) {
+  if (elf_fd >= 0) {
+    if (close(elf_fd) < 0) {
       perror("close");
       exitno = EXIT_FAILED;
     }
   }
-  if (gadgetf) {
-    if (fclose(gadgetf) < 0) {
+  if (gadget_f) {
+    if (fclose(gadget_f) < 0) {
       perror("fclose");
       exitno = EXIT_FAILED;
     }
@@ -193,4 +140,75 @@ int main(int argc, char *argv[]) {
 }
 
 
+void gadgets_config_setdefaults(struct gadgets_config *conf) {
+  conf->elf_path = NULL;
+  conf->gadgets_path = GADGETS_PATH_DEFAULT;
+  conf->gadget_len = GADGET_LEN_DEFAULT;
+  conf->gadgets_find_mode = GADGETS_FIND_RETS;
+}
 
+
+int gadgets_getopts(int argc, char *argv[], struct gadgets_config *conf) {
+  const char *usage =
+    "usage: %s [option...] elf_file\n"		\
+    "Options:\n"							\
+    "-o <outpath>     where to write the gadget dump to\n"		\
+    "-n <length>      maximum length of the gadgets found\n"		\
+    "-x <addrs_path>  path to list of addresses to exclusively consider\n" \
+    "-r               find gadgets that end in `ret'\n"			\
+    "-j               find gadgets that end in `jmp <reg>'\n"		\
+    "-h               print this description\n";    
+  
+  /* parse arguments */
+  const char *optstring = "o:d:hn:rjx:";
+  int optc;
+  int optvalid = 1;
+  while ((optc = getopt(argc, argv, optstring)) >= 0) {
+    switch (optc) {
+    case 'o':
+      conf->gadgets_path = optarg;
+      break;
+
+    case 'n':
+      if (parse_optarg_int(optarg, BASE_10, argv[0], optc, &conf->gadget_len) < 0) {
+	fprintf(stderr, "%s: -n: gadget length must be a positive integer\n",
+		argv[0]);
+	optvalid = 0;
+      }
+      break;
+
+    case 'r': // find gadgets ending with `ret'
+      conf->gadgets_find_mode |= GADGETS_FIND_RETS;
+      break;
+
+    case 'j': // find gadgets ending with `jmp r*x'
+      conf->gadgets_find_mode |= GADGETS_FIND_IJMPS;
+      break;
+
+    case 'x': // ignore path
+      conf->addr_path = optarg;
+      break;
+      
+    case 'h':
+    case '?':
+    default:
+      fprintf(stderr, usage, argv[0]);
+      optvalid = 0;
+      break;
+    }
+  }
+
+  /* return if parsing failed */
+  if (!optvalid) {
+    return -1;
+  }
+
+  /* set input file */
+  if (optind == argc) {
+    fprintf(stderr, "%s: no input file specified.\n", argv[0]);
+    return -1;
+  }
+  conf->elf_path = argv[optind];
+
+  return optvalid ? 0 : -1;
+}

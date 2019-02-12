@@ -21,6 +21,7 @@ Elf64_Off phoffset(uint16_t phnum, uint16_t phentsize);
 
 void *memdup(void *ptr, size_t size);
 
+#define BASE_10 10
 int parse_optarg_int(const char *optarg, int base, const char *prog, int optc,
 		     int *val);
 

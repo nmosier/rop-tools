@@ -9,6 +9,7 @@
 #include "util.h"
 #include "ropasm.h"
 #include "ropalg.h"
+#include "ropaddr.h"
 
 static const instr_class_t GADGET_SUFFIX_RET = {1, {[0] = 0xff},
 						  {[0] = OPCODE_RET}};
@@ -40,15 +41,16 @@ static const masked_instr_class_t gadget_suffixes[] =
 
 
 
-// gadget trie
+  //int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
+  //		 int maxlen, int mode) {
 int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
-		 int maxlen, int mode) {
+		 const struct gadgets_config *conf) {
   rop_bank_t *bank_it;
   size_t nbanks = banks->len;
   size_t i;
 
   for (i = 0, bank_it = banks->arr; i < nbanks; ++i, ++bank_it) {
-    if (gadgets_find_inbank(bank_it, gadtrie, dcr, maxlen, mode) < 0) {
+    if (gadgets_find_inbank(bank_it, gadtrie, dcr, conf) < 0) {
       return -1;
     }
   }
@@ -56,16 +58,16 @@ int gadgets_find(rop_banks_t *banks, trie_t gadtrie, LLVMDisasmContextRef dcr,
   return trie_width(gadtrie);
 }
 
+//int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr,
+//			int maxlen, int mode) {
 int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef dcr,
-			int maxlen, int mode) {
+			const struct gadgets_config *conf) {
   uint8_t *mc_it; // finds ret opcodes
   uint8_t *start, *end;
   instrs_t rjmps;
 
   /* init */
   instrs_init(&rjmps);
-
-  /* in*/
 
   /* setup -- build rjmp list */
   if (rjmps_find_inbank(bank, &rjmps, dcr) < 0) {
@@ -83,12 +85,12 @@ int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
   for (mc_it = start; mc_it < end; ++mc_it) {
     instr_t suffix_instr;
     const masked_instr_class_t *suffix_class;
-
+    
     /* find interesting suffix */
     for (suffix_class = gadget_suffixes; suffix_class->suffix; ++suffix_class) {
       size_t class_mclen;
-
-      if ((suffix_class->mask & mode)) {
+      
+      if ((suffix_class->mask & conf->gadgets_find_mode)) {
 	class_mclen = suffix_class->suffix->mclen;
 	suffix_instr.mclen = MIN(class_mclen, end - mc_it);
 	memcpy(suffix_instr.mc, mc_it, suffix_instr.mclen);
@@ -109,7 +111,7 @@ int gadgets_find_inbank(rop_bank_t *bank, trie_t gadtrie, LLVMDisasmContextRef d
     assert(disasm_status == INSTR_OK);
     
     if (gadgets_buildfrom(mc_it, start, bank->b_off, &suffix_instr, gadtrie, &rjmps,
-			  dcr, maxlen, mode) < 0) {
+			  dcr, conf) < 0) {
       fprintf(stderr, "gadgets_buildfrom: internal error\n");
       return -1;
     }    
@@ -183,7 +185,8 @@ int gadget_boring(instrs_t *gadget) {
 /* build from one gadget suffix */
 int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
 		      instr_t *suffix, trie_t gadtrie, instrs_t *rjmps,
-		      LLVMDisasmContextRef dcr, int maxlen, int mode) {
+		      LLVMDisasmContextRef dcr,
+		      const struct gadgets_config *conf) {
   instrs_t gadget;
   instrs_init(&gadget);
 
@@ -196,12 +199,12 @@ int gadgets_buildfrom(uint8_t *ret_it, uint8_t *start, Elf64_Off offset,
   instrs_push(suffix, &gadget);
 
   return gadgets_buildfrom_aux(ret_it - 1, start, offset, gadtrie, rjmps, dcr,
-			       maxlen, mode, &gadget);
+			       conf, &gadget);
 }
 
 int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
 			  trie_t gadtrie, instrs_t *rjmps, LLVMDisasmContextRef dcr,
-			  int maxlen, int mode, instrs_t *gadget) {
+			  const struct gadgets_config *conf, instrs_t *gadget) {
   instr_t instr;
   size_t instr_len;
   instr_init(&instr);
@@ -215,7 +218,7 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
   }
   gadget->cnt = savcnt;
   
-  if (gadget->cnt >= maxlen) {
+  if (gadget->cnt >= conf->gadget_len) {
     return 0;
   }
 
@@ -247,13 +250,13 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
       
     /* find all subgadgets (contiguous) */
     if (gadgets_buildfrom_aux(instr_it - instr_len, start, offset, gadtrie,
-			      rjmps, dcr, maxlen, mode, gadget) < 0) {
+			      rjmps, dcr, conf, gadget) < 0) {
       return -1; // internal error
     }
 
     /* find all subgadgets (relative jumps to this instruction) */
     if (gadgets_buildfrom_rjmps(instr_it - instr_len + 1, start, offset, gadtrie,
-    				rjmps, dcr, maxlen, mode, gadget) < 0) {
+    				rjmps, dcr, conf, gadget) < 0) {
       return -1;
     }
     
@@ -268,7 +271,7 @@ int gadgets_buildfrom_aux(uint8_t *instr_it, uint8_t *start, Elf64_Off offset,
 // dst is pointer to 1st byte of instruction that should be jump destination
 int gadgets_buildfrom_rjmps(uint8_t *dst, uint8_t *start, Elf64_Off offset,
 			    trie_t gadtrie, instrs_t *rjmps,
-			    LLVMDisasmContextRef dcr, int maxlen, int mode,
+			    LLVMDisasmContextRef dcr, const struct gadgets_config *conf,
 			    instrs_t *gadget) {
   instr_t dst_instr;
   instr_t *src_rjmp;
@@ -278,18 +281,18 @@ int gadgets_buildfrom_rjmps(uint8_t *dst, uint8_t *start, Elf64_Off offset,
   dst_instr.spec.jmpdst = dst - start + offset;
   dst_instr.flags |= INSTR_FLAGS_SPEC;
   src_rjmp = bsearch(&dst_instr, rjmps->arr, rjmps->cnt, sizeof(*rjmps->arr),
-	  (int (*)(const void *, const void *)) rjmps_dstcmp);
+		     (int (*)(const void *, const void *)) rjmps_dstcmp);
   if (src_rjmp == NULL) {
     /* no relative jump with destination found */
     return 0;
   }
-
+  
   assert(instr_match(src_rjmp, &CLASS_JUMP_RELATIVE8) ||
 	 instr_match(src_rjmp, &CLASS_JUMP_RELATIVE32));
-
+  
   /* build from the soucre rjump instruction */
   return gadgets_buildfrom_aux(start + (src_rjmp->mcoff - offset) - 1, start,
-			       offset, gadtrie, rjmps, dcr, maxlen, mode, gadget);
+			       offset, gadtrie, rjmps, dcr, conf, gadget);
 }
 
 
