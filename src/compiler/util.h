@@ -7,6 +7,10 @@
 
 #include <stdio.h>
 
+#define QWORD_SIZE 8
+#define BYTE_SIZE  1
+#define BYTE_BITS  8
+
 /* types */
 #define LIBC_SYM_NAME_MAXLEN 128
 #define LIBC_SYM_LINE_MAXLEN 128
@@ -29,6 +33,8 @@ uint64_t libc_syms_getaddr(const char *name, const struct libc_syms *syms);
 
 #define memdup(ptr) (memdup_f(ptr, sizeof(*ptr)))
 void *memdup_f(const void *ptr, size_t size);
+
+uint64_t roundpage(uint64_t size);
 
 #define MAX(i1, i2) ((i1) < (i2) ? (i2) : (i1))
 #define ARR_MINLEN 16

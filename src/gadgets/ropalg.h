@@ -17,8 +17,9 @@
 #define DISASM_JMP "\tjmp"
 
 /* gadget find modes */
-#define GADGETS_FIND_RETS  1
-#define GADGETS_FIND_IJMPS 2
+#define GADGETS_FIND_RETS   1
+#define GADGETS_FIND_IJMPS  2
+#define GADGETS_FIND_ICALLS 4
 
 #define GADGETS_MAX_SUFFIXES 4
 

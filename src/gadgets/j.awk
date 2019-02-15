@@ -124,4 +124,9 @@ BEGIN {
 	state = 2;
 	print NR;
     }
+
+    #
+    #if (NR % (int(LEN/100)) == 0) {
+    #print "[" int((NR/LEN)*100) "%]";
+#}
 }

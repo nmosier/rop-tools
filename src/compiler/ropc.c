@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* semantic analysis */
-  if (semant(&rop_program, &rop_symtab) < 0) {
+  if (semant(&rop_program, &rop_symtab, stages) < 0) {
     fprintf(stderr, "%s: semantic analyzer detected erorrs.\n", argv[0]);
     goto cleanup;
   }

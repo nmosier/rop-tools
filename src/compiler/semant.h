@@ -5,6 +5,6 @@
 #ifndef __SEMANT_H
 #define __SEMANT_H
 
-int semant(struct program *prog, struct symtab *tab);
+int semant(struct program *prog, struct symtab *tab, int stages);
 
 #endif

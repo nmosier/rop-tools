@@ -110,3 +110,17 @@ uint64_t libc_syms_getaddr(const char *name, const struct libc_syms *syms) {
 uint64_t libc_anchor2base(const char *anchor_sym, uint64_t anchor_addr) {
   return -1; // not yet implemented
 }
+
+
+/* roundpage: rounds size up to nearest page multiple. */
+#define PAGE_SIZE 0x1000
+uint64_t roundpage(uint64_t size) {
+  uint64_t newsize;
+  if (size % PAGE_SIZE) {
+    newsize = (size/PAGE_SIZE + 1) * PAGE_SIZE;
+  } else {
+    newsize = size;
+  }
+
+  return newsize;
+}

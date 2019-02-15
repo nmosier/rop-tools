@@ -25,18 +25,28 @@ const struct instr_class CLASS_JUMP_RELATIVE8 =
   {2, {[0] = 0xff}, {[0] = 0xeb}};
 
 const struct instr_class CLASS_JUMP_RELATIVE32 =
- {5, {[0] = 0xff}, {[0] = 0xe9}};
+  {5, {[0] = 0xff}, {[0] = 0xe9}};
 
+const struct instr_class CLASS_CALL_INDIRECT =
+  {2, {[0] = 0xff, [1] = 0xf8}, {[0] = 0xff, [1] = 0xd0}};
+   // ff d0 -- rax
+   //    d1 -- rcx
+   //    d2 -- rdx
+   //    d7 -- rdi
+   //    d4 -- rsp
+   //    d
 
 // should be null-terminated
 typedef struct masked_instr_class {
   const instr_class_t *suffix;
   int mask;
 } masked_instr_class_t;
+
 static const masked_instr_class_t gadget_suffixes[] =
   {
    {&GADGET_SUFFIX_RET, GADGETS_FIND_RETS},
    {&GADGET_SUFFIX_JMPREG, GADGETS_FIND_IJMPS},
+   {&CLASS_CALL_INDIRECT, GADGETS_FIND_ICALLS},
    {0}
   };
 

@@ -145,7 +145,7 @@ void gadgets_config_setdefaults(struct gadgets_config *conf) {
   conf->gadgets_path = GADGETS_PATH_DEFAULT;
   conf->addr_path = NULL;
   conf->gadget_len = GADGET_LEN_DEFAULT;
-  conf->gadgets_find_mode = GADGETS_FIND_RETS;
+  conf->gadgets_find_mode = 0;
 }
 
 
@@ -158,10 +158,11 @@ int gadgets_getopts(int argc, char *argv[], struct gadgets_config *conf) {
     "-x <addrs_path>  path to list of addresses to exclusively consider\n" \
     "-r               find gadgets that end in `ret'\n"			\
     "-j               find gadgets that end in `jmp <reg>'\n"		\
+    "-c               find gadgets that end in `call <reg>'\n"\
     "-h               print this description\n";    
   
   /* parse arguments */
-  const char *optstring = "o:d:hn:rjx:";
+  const char *optstring = "o:d:hn:rjcx:";
   int optc;
   int optvalid = 1;
   while ((optc = getopt(argc, argv, optstring)) >= 0) {
@@ -186,6 +187,10 @@ int gadgets_getopts(int argc, char *argv[], struct gadgets_config *conf) {
       conf->gadgets_find_mode |= GADGETS_FIND_IJMPS;
       break;
 
+    case 'c':
+      conf->gadgets_find_mode |= GADGETS_FIND_ICALLS;
+      break;
+
     case 'x': // ignore path
       conf->addr_path = optarg;
       break;
@@ -202,6 +207,11 @@ int gadgets_getopts(int argc, char *argv[], struct gadgets_config *conf) {
   /* return if parsing failed */
   if (!optvalid) {
     return -1;
+  }
+
+  /* set find mode if not specified */
+  if (conf->gadgets_find_mode == 0) {
+    conf->gadgets_find_mode = GADGETS_FIND_RETS;
   }
 
   /* set input file */

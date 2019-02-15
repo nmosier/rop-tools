@@ -9,6 +9,7 @@
 #include "ast.h"
 #include "util.h"
 #include "symtab.h"
+#include "stages.h"
 
 #define SEMANT_ERROR(srcinfo, desc, ...)	\
   GENERIC_ERROR("semant", srcinfo, desc, __VA_ARGS__)
@@ -205,10 +206,15 @@ int semant_pass2(struct program *prog, struct symtab *tab) {
 }
 
 
-int semant(struct program *prog, struct symtab *tab) {
+int semant(struct program *prog, struct symtab *tab, int stages) {
   int valid;
 
   valid = 1;
+  /* install stage symbols */
+  int result = semant_install_stagesyms(tab, stages);
+  assert(result >= 0);
+
+  /* do semantic passes */
   if (semant_pass1(prog, tab) < 0) {
     valid = 0;
   }

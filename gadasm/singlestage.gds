@@ -8,3 +8,6 @@
 
 __PADDING__:
   resq PADDING / 8
+__INIT__:
+  INIT
+  JMP PAYLOAD_START
