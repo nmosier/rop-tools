@@ -11,9 +11,6 @@
 #include "symtab.h"
 #include "util.h"
 
-#define QWORD_SIZE 8
-#define BYTE_SIZE  1
-#define BYTE_BITS  8
 
 struct expressions {
   struct expression *exprv;

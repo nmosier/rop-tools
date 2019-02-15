@@ -13,6 +13,7 @@
 #include "ast.h"
 #include "util.h"
 #include "vec.h"
+#include "stages.h"
 
 #define PASS1 1
 #define PASS2 2
@@ -379,17 +380,21 @@ void codegen(struct program *prog, struct symtab *tab, uint64_t pc_origin,
   environment_init(&env, &pc, libc_base, libc_syms);
 
   /* produce padding */
+  /*
   for (uint64_t i = 0; i < padding/QWORD_SIZE; ++i) {
     fwrite(&padding_val, sizeof(padding_val), 1, outfile);
   }
+  */
   
   /* pass 1 */
+  codegen_pass1_set_stagesyms(tab, stages, padding, pc_origin);
   codegen_pass1(prog, &pc, &exprlist, &env);
 
   /* post-pass-1 assertions */
   //  assert(pc == pc_origin + padding + exprlist.exprc*QWORD_SIZE);
 
   /* pass 2 */
+  codegen_pass2_set_stagesyms(tab, stages, exprlist.exprc);
   codegen_pass2(&exprlist, &env, outfile);
   
 }
@@ -473,6 +478,9 @@ uint64_t compute_symbol(const struct symbol *sym, const struct environment *env,
     }
     /* add offset to libc base address */
     return offset + env->libc_base;
+
+  case SYMBOL_CONST:
+    return sym->qconst;
     
   case SYMBOL_DEFINITION:
   case SYMBOL_REG:

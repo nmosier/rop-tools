@@ -16,6 +16,7 @@ enum symbol_kind {
   SYMBOL_EXTERN,
   SYMBOL_REG,
   SYMBOL_BLOCK,
+  SYMBOL_CONST,
   SYMBOL_UNKNOWN,
 };
 enum symbol_kind rulek2symk(enum rule_kind rulek);
@@ -28,6 +29,7 @@ struct symbol {
     struct rules defs; // overloaded rules. Simpler to re-use `struct rule'.
     struct rule *equ;
     struct block *blk;
+    uint64_t qconst;
   };
 };
 void symbol_init(struct symbol *sym);
