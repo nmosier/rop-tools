@@ -1,0 +1,18 @@
+
+PAYLOAD_LENGTH := 0x1000
+PAYLOAD_ADDR := 0x424242000
+PAYLOAD_FD := 0     ; stdin
+
+PADDING := 0x18
+
+#
+
+PAYLOAD_START:
+  PUSH 0
+  PUSH $
+  PUSH FMT
+  LIBCALL3 <printf>
+  LIBCALL3 <exit>
+  
+FMT:
+  db "addr = %zx\n",0
