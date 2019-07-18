@@ -1,13 +1,18 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <alloca.h>
 #include <unistd.h>
 
 #define BUFSIZE 0x2000
 
+void find_libc(void) {
+  printf("sleep @ %p\n", (void *) sleep);
+}
+
 void echo() {
   ssize_t nbytes;
   char buf[8];
-  
+
   if ((nbytes = read(0, buf, BUFSIZE)) < 0) {
     perror("read");
     return;
@@ -18,5 +23,6 @@ void echo() {
 
 int main(int argc, char *argv[]) {
   alloca(BUFSIZE);
+  find_libc();
   echo();
 }

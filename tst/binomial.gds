@@ -1,0 +1,110 @@
+/* binomial.gds
+ * An inefficient recursive binomial coefficient generator.
+ * Nicholas Mosier 2019
+ */
+
+PAYLOAD_FD := 0
+SYSCALL_EXIT := 60
+
+N := 15
+K := 11
+
+
+DEBUG imm64 :=
+  PUSH imm64
+  LIBCALL3 <printf>
+  LEAVE 8
+
+#
+
+PAYLOAD_START:
+  PUSH K
+  PUSH N
+  ;CALL BINOM_REC
+  ;PUSH ; arg2: %d
+  ;PUSH FMT ; arg1: fmt
+  ;LIBCALL3 <printf>
+  ALLOC 16
+
+LOOP:
+  MOV N+1
+LOOP_N:
+  PUT 8
+  DEC
+  PUT 0
+  INC
+LOOP_K:
+  DEC
+  PUT 8
+  CALL BINOM_REC
+  PUSH
+  PUSH FMT
+  LIBCALL3 <printf>
+  LEAVE 16
+LOOP_K_END:
+  GET 8
+  CMP 0
+  JNE LOOP_K
+LOOP_N_END:
+  PUSH NEWLINE
+  LIBCALL3 <printf>
+  LEAVE 8
+  GET 0
+  CMP 0
+  JNE LOOP_N
+
+DONE:
+  PUSH 0
+  MOV SYSCALL_EXIT
+  SYSCALL3
+
+
+// invariants:
+//  SP[1] = K
+//  SP[0] = N
+BINOM_REC:
+  ALLOC 8 ; locals
+  // base cases
+  GET 24 ; arg2: K
+  PUSH
+  CMP 0   ; K == 0 ?
+  JEQ BINOM_BASE
+  GET 24 ; arg1: N
+  CMP ; N == K ?
+  JEQ BINOM_BASE
+  // recursive case
+  DEC
+  PUSH ; --N
+  CALL BINOM_REC
+  PUT 16 ; store in locals area
+  GET 8 ; ACC <- K
+  DEC
+  PUT 8 ; --K
+  CALL BINOM_REC
+  ADDFROM 16 ; ACC <- BINOM(N=N-1,K=K-1) + BINOM(N=N-1,K=K)
+  LEAVE 24
+  RET
+
+BINOM_BASE:
+  LEAVE 16
+  MOV 1
+  RET
+
+FMT:
+  db "%d \0"
+
+NEWLINE:
+  db "\n\0"
+
+FMT_NK:
+  db "n=%d,k=%d\n\0"
+
+FMT_K:
+  db "k=%d\n\0"
+
+FMT_N:
+  db "n=%d\n\0"
+
+MSG:
+  db "here\n\0"
+

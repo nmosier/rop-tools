@@ -5,6 +5,7 @@
 CMP imm64 :=
     MOV rcx,rax
     MOV rdx,imm64
+    MOV rax,rcx
     SUB rax,rdx
     MOV rax,rcx
 

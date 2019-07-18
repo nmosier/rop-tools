@@ -1,0 +1,39 @@
+/* vulnerable.gds
+ * A vulnerable program written in ROPC-IR, that secondarily
+ * writes an input string to a specified address.
+ * Nicholas Mosier 2019
+ */
+
+PAYLOAD_FD := 3
+SYSCALL_EXIT := 60
+SYSCALL_READ := 0
+
+BUFSIZE := 0x200
+
+#
+
+// scanf
+
+PAYLOAD_START:
+  CALL READ_CMD
+  PUSH 0
+  MOV SYSCALL_EXIT
+  SYSCALL3
+
+READ_CMD:
+  ALLOC 16 ; command buffer
+  PUSH BUFSIZE ; arg3
+  LEA 8
+  PUSH		; arg2
+  PUSH 0        ; arg1
+  MOV SYSCALL_READ
+  SYSCALL3
+  LEAVE 24 ; pop off 3 args
+  LEA 0
+  PUSH
+  LIBCALL3 <system>
+  LEAVE 24 ; pop off 1 arg and buffer
+  RET
+
+FMT:
+  db "%p %zu\n\0"

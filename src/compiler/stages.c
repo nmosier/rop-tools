@@ -38,10 +38,12 @@ int semant_install_stagesyms(struct symtab *tab, int stages) {
     }
     sym->kind = SYMBOL_CONST;
 
+    /*
     if ((sym = symtab_put_bare("PAYLOAD_FD", tab)) == NULL) {
       return -1;
     }
     sym->kind = SYMBOL_CONST;
+    */
   }
 
   return 0;
@@ -60,9 +62,11 @@ void codegen_pass1_set_stagesyms(struct symtab *tab, int stages, uint64_t paddin
     assert(sym && sym->kind == SYMBOL_CONST);
     sym->qconst = origin;
 
+    /*
     sym = symtab_get("PAYLOAD_FD", tab);
     assert(sym && sym->kind == SYMBOL_CONST);
     sym->qconst = PAYLOAD_FD;
+    */
   }
 }
 
