@@ -1,0 +1,15 @@
+/* div.gds -- simple division test
+ */
+
+#
+
+DIV:
+  INIT
+  MOV 64/(8 - 1)
+  PUSH
+  PUSH FMT
+  LIBCALL3 <printf>
+  JMP $
+
+FMT:
+  db "%d\n",0

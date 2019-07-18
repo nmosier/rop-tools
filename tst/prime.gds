@@ -1,0 +1,48 @@
+/* prime.gds
+ */
+
+#
+
+START:
+  INIT
+  MOV 120
+  CALL PRIMES
+
+// ACC: number up through which to check for primality
+PRIMES:
+  PUSH    ; preserve max number
+  INC
+  PUSH
+  ADD
+  PUSH
+  ADD
+  PUSH
+  ADD     ; ACC = space to reserve in array (size = (enum+1)*8)
+  ALLOC   ; alloc ACC bytes
+  PUSH    ; arrlen
+  PUSH
+  LEA 0
+  ADD     ; ACC points to (one past) end of array
+  ALLOC 8
+
+// ACC: number to sieve out
+// arg1: ptr to sieve array
+// arg2: length of sieve array
+SIEVE:
+  PUSH     ; save number to sieve
+  GET 8    ; fetch arg1
+  ADDFROM 16 ; sieve_ptr + sive_len = sieve_end
+  PUT 16   ; save sieve_end in arg2
+  GET 8    ; sieve_ptr
+  PUSH 0   ; signifies that number has been sieved
+  JMP SIEVE_LOOP_ENTRY
+SIEVE_LOOP:   // invariant: ACC = sieve_ptr
+  STO 0    ; *sieve_ptr = *(SP+0) = 0
+  ADDFROM 8 ; add sieve number
+SIEVE_LOOP_ENTRY:
+  CMPAT 24
+  JLT SIEVE_LOOP ; loop until end
+SIEVE_DONE:
+  LEAVE 16
+  RET
+  
