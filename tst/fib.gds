@@ -10,6 +10,7 @@
 
 //PADDING := 0x18
 SYSCALL_EXIT := 60
+PAYLOAD_FD := 0
 
 #
 
