@@ -18,3 +18,6 @@ CONFIG2=tst2.cfg
 
 %: %.c
 	gcc -g -fno-stack-protector -o $@ $^
+
+tests: echo echo3 fib.sc vulnerable.sc binomial-2+.sc
+	( ./echo < fib.sc && ./echo3 vulnerable.sc < binomial-2+.sc && echo "tests passed" ) || "tests failed"
