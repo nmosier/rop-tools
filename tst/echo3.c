@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define BUFSIZE 0x2000
+#define BUFSIZE 300
 
 void find_libc(void) {
   printf("sleep @ %p\n", (void *) sleep);
@@ -31,7 +31,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   
-  alloca(BUFSIZE);
   find_libc();
   if ((fd = open(argv[1], O_RDWR)) < 0) {
     perror("open");

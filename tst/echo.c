@@ -22,7 +22,6 @@ void echo() {
 }
 
 int main(int argc, char *argv[]) {
-  //alloca(BUFSIZE);
   find_libc();
   echo();
 }
