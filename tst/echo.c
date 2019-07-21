@@ -3,7 +3,7 @@
 #include <alloca.h>
 #include <unistd.h>
 
-#define BUFSIZE 0x2000
+#define BUFSIZE 300
 
 void find_libc(void) {
   printf("sleep @ %p\n", (void *) sleep);
@@ -22,7 +22,7 @@ void echo() {
 }
 
 int main(int argc, char *argv[]) {
-  alloca(BUFSIZE);
+  //alloca(BUFSIZE);
   find_libc();
   echo();
 }
