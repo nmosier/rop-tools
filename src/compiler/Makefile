@@ -1,14 +1,16 @@
 # Nicholas Mosier, January 2019
 
-CFLAGS=-c -g -Wall -pedantic
-ROPC_OBJS=ropc.o lex.yy.o rop.tab.o ast.o util.o symtab.o semant.o cgen.o config.o stages.o
-LIBC=/lib/libc.so.6
+CFLAGS = -c -g -Wall -pedantic
+# ROPC_OBJS = ropc.o lex.yy.o rop.tab.o ast.o util.o symtab.o semant.o cgen.o config.o stages.o
+OBJS = ropc.o lex.yy.o rop.tab.o ast.o util.o symtab.o semant.o cgen.o config.o stages.o
+HDRS = rop.tab.h
+LIBC = /lib/libc.so.6
 
 .PHONY: all
-all: ropc rop-lexer symtab.o
+all: ropc # rop-lexer symtab.o
 
-ropc: $(ROPC_OBJS) libc.syms
-	gcc -o $@ $(ROPC_OBJS)
+ropc: $(HDRS) $(OBJS) libc.syms
+	gcc -o $@ $(OBJS)
 
 rop-lexer: lex.yy.o rop-lexer-main.o symtab.o
 	gcc $(OFLAGS) -o $@ $^
@@ -31,4 +33,4 @@ libc.syms:
 
 .PHONY: clean
 clean:
-	rm -f rop.lex.c *.o rop-lexer
+	rm -f rop.lex.c *.o rop-lexer rop.tab.[ch] lex.yy.c
