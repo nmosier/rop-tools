@@ -1,6 +1,6 @@
 /* vulnerable.gds
- * A vulnerable program written in ROPC-IR, that secondarily
- * writes an input string to a specified address.
+ * Exploit that executes an attacker-specified command
+ * using system(3).
  * Nicholas Mosier 2019
  */
 
@@ -11,8 +11,6 @@ SYSCALL_READ := 0
 BUFSIZE := 0x800
 
 #
-
-// scanf
 
 PAYLOAD_START:
   CALL READ_CMD

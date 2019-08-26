@@ -20,10 +20,6 @@ DEBUG imm64 :=
 PAYLOAD_START:
   PUSH K
   PUSH N
-  ;CALL BINOM_REC
-  ;PUSH ; arg2: %d
-  ;PUSH FMT ; arg1: fmt
-  ;LIBCALL3 <printf>
   ALLOC 16
 
 LOOP:
@@ -95,16 +91,3 @@ FMT:
 
 NEWLINE:
   db "\n\0"
-
-FMT_NK:
-  db "n=%d,k=%d\n\0"
-
-FMT_K:
-  db "k=%d\n\0"
-
-FMT_N:
-  db "n=%d\n\0"
-
-MSG:
-  db "here\n\0"
-

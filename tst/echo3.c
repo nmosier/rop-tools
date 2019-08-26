@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <alloca.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -31,7 +30,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   
-  find_libc();
   if ((fd = open(argv[1], O_RDWR)) < 0) {
     perror("open");
     return 0;

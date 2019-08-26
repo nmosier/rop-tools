@@ -4,18 +4,12 @@
  */
 
 // equates for stage file
-//PAYLOAD_LENGTH := 0x2000 ;overestimate
-//PAYLOAD_FD := 0           ;stdin
-//PAYLOAD_ADDR := 0x424242000 ;magic address
-
-//PADDING := 0x18
 SYSCALL_EXIT := 60
 PAYLOAD_FD := 0
 
 #
 
 PAYLOAD_START:
-// INIT
   MOV 30
 LOOP:
   PUSH
